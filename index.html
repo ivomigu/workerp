@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WorkERP</title>
+
+<style>
+body{
+  font-family:-apple-system;
+  background:#111;
+  color:white;
+  text-align:center;
+  padding:20px;
+}
+
+h1{
+  margin-bottom:20px;
+}
+
+.card{
+  background:#222;
+  padding:20px;
+  margin:15px 0;
+  border-radius:20px;
+}
+
+button{
+  margin:5px;
+  padding:12px;
+  border-radius:12px;
+  border:none;
+  background:#007aff;
+  color:white;
+  font-size:16px;
+}
+
+.status{
+  font-size:18px;
+  margin:10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Work ERP</h1>
+
+<div class="card">
+  <div class="status" id="status">Parado</div>
+</div>
+
+<div class="card">
+  <h2>Horas Hoje</h2>
+  <p id="hoursToday">0.00 h</p>
+</div>
+
+<button onclick="startWork()">Iniciar</button>
+<button onclick="startBreak()">Pausa</button>
+<button onclick="endBreak()">Voltar</button>
+<button onclick="endWork()">Terminar</button>
+
+<div class="card">
+  <h2>Banco de Horas</h2>
+  <p id="bankHours">0.00 h</p>
+</div>
+
+<div class="card">
+  <h2>Salário</h2>
+  <p id="salary">CHF 0</p>
+</div>
+
+<script>
+let startTime = null;
+let breakTime = null;
+let totalSeconds = 0;
+let salaryPerHour = 25; // pode alterar aqui
+
+function startWork(){
+  if(!startTime){
+    startTime = new Date();
+    document.getElementById("status").innerText = "A trabalhar";
+  }
+}
+
+function startBreak(){
+  if(startTime && !breakTime){
+    breakTime = new Date();
+    document.getElementById("status").innerText = "Em pausa";
+  }
+}
+
+function endBreak(){
+  if(breakTime){
+    let now = new Date();
+    let pauseDuration = (now - breakTime) / 1000;
+    startTime = new Date(startTime.getTime() + pauseDuration*1000);
+    breakTime = null;
+    document.getElementById("status").innerText = "A trabalhar";
+  }
+}
+
+function endWork(){
+  if(startTime){
+    let endTime = new Date();
+    let secondsWorked = (endTime - startTime) / 1000;
+    totalSeconds += secondsWorked;
+
+    let hours = totalSeconds / 3600;
+    document.getElementById("hoursToday").innerText = hours.toFixed(2) + " h";
+    document.getElementById("bankHours").innerText = hours.toFixed(2) + " h";
+    document.getElementById("salary").innerText = "CHF " + (hours * salaryPerHour).toFixed(2);
+
+    startTime = null;
+    breakTime = null;
+    document.getElementById("status").innerText = "Parado";
+  }
+}
+</script>
+
+</body>
+</html>
