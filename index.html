@@ -2,140 +2,175 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Work ERP FUTURE</title>
+<title>Work ERP PRO</title>
 
 <style>
 body{
-    margin:0;
-    font-family:-apple-system;
-    background:linear-gradient(135deg,#0f0f0f,#1a1a2e);
-    color:white;
-    text-align:center;
+  margin:0;
+  font-family:-apple-system;
+  background:linear-gradient(135deg,#0f0f0f,#1c1f2b);
+  color:white;
+  text-align:center;
 }
 
 h1{
-    margin-top:20px;
-    font-size:28px;
-    letter-spacing:2px;
+  margin-top:20px;
+  letter-spacing:2px;
 }
 
 .card{
-    background:rgba(255,255,255,0.05);
-    backdrop-filter:blur(15px);
-    border-radius:20px;
-    padding:20px;
-    margin:20px;
-    box-shadow:0 0 20px rgba(0,122,255,0.3);
+  background:rgba(255,255,255,0.05);
+  backdrop-filter:blur(15px);
+  border-radius:20px;
+  padding:20px;
+  margin:20px;
+  box-shadow:0 0 20px rgba(0,122,255,0.3);
 }
 
 button{
-    margin:8px;
-    padding:12px 18px;
-    border-radius:12px;
-    border:none;
-    font-size:15px;
-    background:linear-gradient(45deg,#007aff,#00f0ff);
-    color:white;
+  margin:8px;
+  padding:12px 18px;
+  border-radius:12px;
+  border:none;
+  font-size:15px;
+  background:linear-gradient(45deg,#007aff,#00f0ff);
+  color:white;
 }
 
-.extra{
-    color:#00ffcc;
-    font-weight:bold;
+table{
+  width:100%;
+  margin-top:10px;
+  border-collapse:collapse;
+}
+
+th,td{
+  padding:8px;
+  border-bottom:1px solid #333;
 }
 </style>
 </head>
 
 <body>
 
-<h1>WORK ERP FUTURE</h1>
+<h1>WORK ERP PRO</h1>
 
 <div class="card">
 <div id="status">Parado</div>
 </div>
 
 <div class="card">
-<h2>Turno Base</h2>
-<p>18:00 → 03:45</p>
+<h2>Resumo Atual</h2>
+<p id="summary">0.00 h</p>
 </div>
+
+<button onclick="startWork()">Iniciar</button>
+<button onclick="coffeeBreak()">☕ Café 15m</button>
+<button onclick="dinnerBreak()">🍽️ Jantar 1h</button>
+<button onclick="endWork()">Terminar</button>
 
 <div class="card">
-<h2>Horas Trabalhadas</h2>
-<p id="worked">0.00 h</p>
-<p class="extra" id="extraHours">Horas Extra: 0.00 h</p>
+<h2>Banco de Horas</h2>
+<p id="bank">0.00 h</p>
+<p id="extras">Extras: 0.00 h</p>
+<p id="sunday150">Domingo 150%: 0.00 h</p>
 </div>
-
-<button onclick="startWork()">Iniciar Turno</button>
-<button onclick="coffeeBreak()">☕ Pausa Café (15m)</button>
-<button onclick="dinnerBreak()">🍽️ Pausa Jantar (1h)</button>
-<button onclick="endWork()">Terminar</button>
 
 <script>
 
-const baseEndHour = 3;
-const baseEndMinute = 45;
+const baseRate = 25;
+const sundayRate = 37.5;
 
 let startTime = localStorage.getItem("startTime");
-let totalBreak = parseFloat(localStorage.getItem("totalBreak")) || 0;
+let breakHours = parseFloat(localStorage.getItem("breakHours")) || 0;
+
+let bank = parseFloat(localStorage.getItem("bank")) || 0;
+let extras = parseFloat(localStorage.getItem("extras")) || 0;
+let sunday150 = parseFloat(localStorage.getItem("sunday150")) || 0;
 
 function startWork(){
-    let now = new Date();
-    let start = new Date();
-    start.setHours(18,0,0,0);
-
-    startTime = start.toISOString();
+  if(!startTime){
+    startTime = new Date().toISOString();
     localStorage.setItem("startTime",startTime);
     document.getElementById("status").innerText="A Trabalhar";
+  }
 }
 
 function coffeeBreak(){
-    totalBreak += 0.25;
-    localStorage.setItem("totalBreak",totalBreak);
-    alert("Pausa café adicionada (15 min)");
+  breakHours += 0.25;
+  localStorage.setItem("breakHours",breakHours);
 }
 
 function dinnerBreak(){
-    totalBreak += 1;
-    localStorage.setItem("totalBreak",totalBreak);
-    alert("Pausa jantar adicionada (1 hora)");
+  breakHours += 1;
+  localStorage.setItem("breakHours",breakHours);
 }
 
 function endWork(){
-    if(!startTime) return;
+  if(!startTime) return;
 
-    let start = new Date(startTime);
-    let end = new Date();
+  let start = new Date(startTime);
+  let end = new Date();
 
-    let diff = (end - start) / (1000*60*60);
-    diff -= totalBreak;
+  let diff = (end - start)/(1000*60*60);
+  diff -= breakHours;
 
-    let baseEnd = new Date();
-    baseEnd.setHours(baseEndHour,baseEndMinute,0,0);
+  let day = start.getDay();
 
-    if(baseEnd < start){
-        baseEnd.setDate(baseEnd.getDate()+1);
-    }
+  if(day === 0){ 
+    // DOMINGO
+    let midnight = new Date(start);
+    midnight.setHours(24,0,0,0);
+
+    let untilMidnight = (midnight - start)/(1000*60*60);
+    if(untilMidnight > diff) untilMidnight = diff;
+
+    sunday150 += untilMidnight;
+
+    let afterMidnight = diff - untilMidnight;
+    if(afterMidnight > 0) extras += afterMidnight;
+
+  }else{
+    // SEG-SÁB
+    let baseEnd = new Date(start);
+    baseEnd.setHours(3,45,0,0);
+    baseEnd.setDate(baseEnd.getDate()+1);
 
     let baseHours = (baseEnd - start)/(1000*60*60);
-    baseHours -= totalBreak;
+    baseHours -= breakHours;
 
-    let extra = diff - baseHours;
-    if(extra < 0) extra = 0;
+    if(diff > baseHours){
+      bank += baseHours;
+      extras += diff - baseHours;
+    }else{
+      bank += diff;
+    }
+  }
 
-    document.getElementById("worked").innerText = diff.toFixed(2)+" h";
-    document.getElementById("extraHours").innerText = 
-        "Horas Extra: "+extra.toFixed(2)+" h";
+  localStorage.setItem("bank",bank);
+  localStorage.setItem("extras",extras);
+  localStorage.setItem("sunday150",sunday150);
 
-    localStorage.removeItem("startTime");
-    localStorage.removeItem("totalBreak");
-    totalBreak = 0;
-    startTime = null;
+  localStorage.removeItem("startTime");
+  localStorage.removeItem("breakHours");
+  breakHours=0;
+  startTime=null;
 
-    document.getElementById("status").innerText="Turno Finalizado";
+  document.getElementById("status").innerText="Turno Finalizado";
+
+  updateDisplay();
+}
+
+function updateDisplay(){
+  document.getElementById("bank").innerText=bank.toFixed(2)+" h";
+  document.getElementById("extras").innerText="Extras: "+extras.toFixed(2)+" h";
+  document.getElementById("sunday150").innerText="Domingo 150%: "+sunday150.toFixed(2)+" h";
 }
 
 if(startTime){
-    document.getElementById("status").innerText="A Trabalhar";
+  document.getElementById("status").innerText="A Trabalhar";
 }
+
+updateDisplay();
 
 </script>
 
