@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WorkERP</title>
+<title>WorkERP Pro</title>
 
 <style>
 body{
@@ -11,10 +11,6 @@ body{
   color:white;
   text-align:center;
   padding:20px;
-}
-
-h1{
-  margin-bottom:20px;
 }
 
 .card{
@@ -34,50 +30,72 @@ button{
   font-size:16px;
 }
 
-.status{
-  font-size:18px;
-  margin:10px;
+table{
+  width:100%;
+  margin-top:10px;
+  border-collapse:collapse;
+}
+
+th,td{
+  padding:8px;
+  border-bottom:1px solid #444;
+}
+
+th{
+  background:#333;
 }
 </style>
 </head>
 
 <body>
 
-<h1>Work ERP</h1>
+<h1>Work ERP PRO</h1>
 
 <div class="card">
-  <div class="status" id="status">Parado</div>
+  <div id="status">Parado</div>
 </div>
 
 <div class="card">
   <h2>Horas Hoje</h2>
-  <p id="hoursToday">0.00 h</p>
+  <p id="today">0.00 h</p>
 </div>
 
 <button onclick="startWork()">Iniciar</button>
-<button onclick="startBreak()">Pausa</button>
-<button onclick="endBreak()">Voltar</button>
-<button onclick="endWork()">Terminar</button>
+<button onclick="stopWork()">Terminar</button>
 
 <div class="card">
-  <h2>Banco de Horas</h2>
-  <p id="bank">0.00 h</p>
+  <h2>Salário Hoje</h2>
+  <p id="salary">CHF 0.00</p>
 </div>
 
 <div class="card">
-  <h2>Salário</h2>
-  <p id="salary">CHF 0.00</p>
+  <h2>Histórico</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Horas</th>
+        <th>Salário</th>
+      </tr>
+    </thead>
+    <tbody id="historyTable"></tbody>
+  </table>
 </div>
 
 <script>
 
-let startTime = localStorage.getItem("startTime");
-let totalSeconds = parseInt(localStorage.getItem("totalSeconds")) || 0;
-let working = localStorage.getItem("working") === "true";
 let hourlyRate = 25;
+let startTime = localStorage.getItem("startTime");
+let working = localStorage.getItem("working") === "true";
+let history = JSON.parse(localStorage.getItem("history")) || {};
+
+function todayDate(){
+  return new Date().toISOString().split("T")[0];
+}
 
 function updateDisplay(){
-  let seconds = totalSeconds;
+  let today = todayDate();
+  let seconds = history[today] || 0;
 
   if(working && startTime){
     seconds += Math.floor((Date.now() - startTime)/1000);
@@ -85,8 +103,7 @@ function updateDisplay(){
 
   let hours = (seconds/3600).toFixed(2);
 
-  document.getElementById("hoursToday").innerText = hours + " h";
-  document.getElementById("bank").innerText = hours + " h";
+  document.getElementById("today").innerText = hours + " h";
   document.getElementById("salary").innerText = "CHF " + (hours * hourlyRate).toFixed(2);
 }
 
@@ -100,27 +117,44 @@ function startWork(){
   }
 }
 
-function endWork(){
+function stopWork(){
   if(working){
-    totalSeconds += Math.floor((Date.now() - startTime)/1000);
-    localStorage.setItem("totalSeconds", totalSeconds);
+    let today = todayDate();
+    let seconds = history[today] || 0;
+
+    seconds += Math.floor((Date.now() - startTime)/1000);
+    history[today] = seconds;
+
+    localStorage.setItem("history", JSON.stringify(history));
     localStorage.setItem("working", false);
+
     working = false;
     document.getElementById("status").innerText = "Parado";
+    renderHistory();
   }
 }
 
-function startBreak(){
-  endWork();
-  document.getElementById("status").innerText = "Em pausa";
-}
+function renderHistory(){
+  let table = document.getElementById("historyTable");
+  table.innerHTML = "";
 
-function endBreak(){
-  startWork();
+  for(let date in history){
+    let hours = (history[date]/3600).toFixed(2);
+    let salary = (hours * hourlyRate).toFixed(2);
+
+    table.innerHTML += `
+      <tr>
+        <td>${date}</td>
+        <td>${hours} h</td>
+        <td>CHF ${salary}</td>
+      </tr>
+    `;
+  }
 }
 
 setInterval(updateDisplay,1000);
 updateDisplay();
+renderHistory();
 
 </script>
 
