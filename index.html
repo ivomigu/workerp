@@ -2,57 +2,47 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WorkERP Pro</title>
+<title>Work ERP PRO</title>
 
 <style>
 body{
-  font-family:-apple-system;
-  background:#0d1117;
-  color:white;
-  padding:20px;
-  margin:0;
+    font-family:-apple-system;
+    background:#111;
+    color:white;
+    text-align:center;
+    padding:20px;
 }
 
 h1{
-  text-align:center;
+    margin-bottom:20px;
 }
 
 .card{
-  background:#161b22;
-  padding:20px;
-  margin:15px 0;
-  border-radius:20px;
-  box-shadow:0 0 20px rgba(0,0,0,0.4);
+    background:#222;
+    padding:20px;
+    margin:15px 0;
+    border-radius:20px;
 }
 
 button{
-  margin:5px;
-  padding:12px 16px;
-  border-radius:12px;
-  border:none;
-  background:#238636;
-  color:white;
-  font-size:16px;
-}
-
-button.stop{
-  background:#da3633;
+    margin:8px;
+    padding:12px 18px;
+    border-radius:12px;
+    border:none;
+    background:#007aff;
+    color:white;
+    font-size:16px;
 }
 
 table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:10px;
+    width:100%;
+    margin-top:10px;
+    border-collapse:collapse;
 }
 
 th,td{
-  padding:10px;
-  border-bottom:1px solid #30363d;
-  text-align:center;
-}
-
-th{
-  background:#21262d;
+    padding:8px;
+    border-bottom:1px solid #333;
 }
 </style>
 </head>
@@ -62,135 +52,109 @@ th{
 <h1>Work ERP PRO</h1>
 
 <div class="card">
-  <h2>Status</h2>
-  <p id="status">Parado</p>
+<div id="status">Parado</div>
 </div>
 
 <div class="card">
-  <h2>Hoje</h2>
-  <p id="todayHours">0.00 h</p>
-  <p id="todaySalary">CHF 0.00</p>
+<h2>Horas Hoje</h2>
+<p id="hoursToday">0.00 h</p>
 </div>
 
 <button onclick="startWork()">Iniciar</button>
-<button class="stop" onclick="stopWork()">Terminar</button>
+<button onclick="endWork()">Terminar</button>
 
 <div class="card">
-  <h2>Total do Mês</h2>
-  <p id="monthHours">0.00 h</p>
-  <p id="monthSalary">CHF 0.00</p>
+<h2>Salário Hoje</h2>
+<p id="salaryToday">CHF 0.00</p>
 </div>
 
 <div class="card">
-  <h2>Histórico</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Data</th>
-        <th>Horas</th>
-        <th>Salário</th>
-      </tr>
-    </thead>
-    <tbody id="historyTable"></tbody>
-  </table>
+<h2>Histórico</h2>
+<table>
+<thead>
+<tr>
+<th>Data</th>
+<th>Horas</th>
+<th>Salário</th>
+</tr>
+</thead>
+<tbody id="historyTable"></tbody>
+</table>
 </div>
 
 <script>
 
-let hourlyRate = 25;
-let working = localStorage.getItem("working") === "true";
-let startTime = parseInt(localStorage.getItem("startTime"));
-let history = JSON.parse(localStorage.getItem("history")) || {};
+const hourlyRate = 25; // altera aqui o valor por hora
 
-function todayDate(){
-  return new Date().toISOString().split("T")[0];
-}
+let startTime = localStorage.getItem("startTime");
+let history = JSON.parse(localStorage.getItem("history")) || [];
 
-function currentMonth(){
-  return new Date().toISOString().slice(0,7);
-}
+function updateUI(){
+    let today = new Date().toLocaleDateString();
+    let totalHours = 0;
 
-function updateDisplay(){
+    history.forEach(entry=>{
+        if(entry.date === today){
+            totalHours += entry.hours;
+        }
+    });
 
-  let today = todayDate();
-  let seconds = history[today] || 0;
+    document.getElementById("hoursToday").innerText = totalHours.toFixed(2) + " h";
+    document.getElementById("salaryToday").innerText = 
+        "CHF " + (totalHours * hourlyRate).toFixed(2);
 
-  if(working && startTime){
-    seconds += Math.floor((Date.now() - startTime)/1000);
-  }
-
-  let hours = (seconds/3600);
-  document.getElementById("todayHours").innerText = hours.toFixed(2) + " h";
-  document.getElementById("todaySalary").innerText = "CHF " + (hours * hourlyRate).toFixed(2);
-
-  calculateMonth();
-}
-
-function calculateMonth(){
-
-  let month = currentMonth();
-  let totalSeconds = 0;
-
-  for(let date in history){
-    if(date.startsWith(month)){
-      totalSeconds += history[date];
-    }
-  }
-
-  let hours = totalSeconds/3600;
-
-  document.getElementById("monthHours").innerText = hours.toFixed(2) + " h";
-  document.getElementById("monthSalary").innerText = "CHF " + (hours * hourlyRate).toFixed(2);
+    loadHistory();
 }
 
 function startWork(){
-  if(!working){
-    startTime = Date.now();
-    localStorage.setItem("startTime", startTime);
-    localStorage.setItem("working", true);
-    working = true;
+    if(!startTime){
+        startTime = new Date().toISOString();
+        localStorage.setItem("startTime", startTime);
+        document.getElementById("status").innerText = "A trabalhar";
+    }
+}
+
+function endWork(){
+    if(startTime){
+        let start = new Date(startTime);
+        let end = new Date();
+        let diff = (end - start) / (1000*60*60);
+
+        let today = new Date().toLocaleDateString();
+
+        history.push({
+            date: today,
+            hours: diff
+        });
+
+        localStorage.setItem("history", JSON.stringify(history));
+        localStorage.removeItem("startTime");
+        startTime = null;
+
+        document.getElementById("status").innerText = "Parado";
+
+        updateUI();
+    }
+}
+
+function loadHistory(){
+    let table = document.getElementById("historyTable");
+    table.innerHTML = "";
+
+    history.forEach(entry=>{
+        let row = "<tr><td>"+entry.date+"</td><td>"+
+        entry.hours.toFixed(2)+" h</td><td>CHF "+
+        (entry.hours * hourlyRate).toFixed(2)+"</td></tr>";
+
+        table.innerHTML += row;
+    });
+}
+
+if(startTime){
     document.getElementById("status").innerText = "A trabalhar";
-  }
 }
 
-function stopWork(){
-  if(working){
-    let today = todayDate();
-    let seconds = history[today] || 0;
-
-    seconds += Math.floor((Date.now() - startTime)/1000);
-    history[today] = seconds;
-
-    localStorage.setItem("history", JSON.stringify(history));
-    localStorage.setItem("working", false);
-    working = false;
-
-    document.getElementById("status").innerText = "Parado";
-    renderHistory();
-  }
-}
-
-function renderHistory(){
-  let table = document.getElementById("historyTable");
-  table.innerHTML = "";
-
-  for(let date in history){
-    let hours = (history[date]/3600);
-    let salary = hours * hourlyRate;
-
-    table.innerHTML += `
-      <tr>
-        <td>${date}</td>
-        <td>${hours.toFixed(2)} h</td>
-        <td>CHF ${salary.toFixed(2)}</td>
-      </tr>
-    `;
-  }
-}
-
-setInterval(updateDisplay,1000);
-updateDisplay();
-renderHistory();
+updateUI();
 
 </script>
 
