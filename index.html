@@ -61,60 +61,67 @@ button{
 
 <div class="card">
   <h2>Banco de Horas</h2>
-  <p id="bankHours">0.00 h</p>
+  <p id="bank">0.00 h</p>
 </div>
 
 <div class="card">
   <h2>Salário</h2>
-  <p id="salary">CHF 0</p>
+  <p id="salary">CHF 0.00</p>
 </div>
 
 <script>
-let startTime = null;
-let breakTime = null;
-let totalSeconds = 0;
-let salaryPerHour = 25; // pode alterar aqui
+
+let startTime = localStorage.getItem("startTime");
+let totalSeconds = parseInt(localStorage.getItem("totalSeconds")) || 0;
+let working = localStorage.getItem("working") === "true";
+let hourlyRate = 25;
+
+function updateDisplay(){
+  let seconds = totalSeconds;
+
+  if(working && startTime){
+    seconds += Math.floor((Date.now() - startTime)/1000);
+  }
+
+  let hours = (seconds/3600).toFixed(2);
+
+  document.getElementById("hoursToday").innerText = hours + " h";
+  document.getElementById("bank").innerText = hours + " h";
+  document.getElementById("salary").innerText = "CHF " + (hours * hourlyRate).toFixed(2);
+}
 
 function startWork(){
-  if(!startTime){
-    startTime = new Date();
-    document.getElementById("status").innerText = "A trabalhar";
-  }
-}
-
-function startBreak(){
-  if(startTime && !breakTime){
-    breakTime = new Date();
-    document.getElementById("status").innerText = "Em pausa";
-  }
-}
-
-function endBreak(){
-  if(breakTime){
-    let now = new Date();
-    let pauseDuration = (now - breakTime) / 1000;
-    startTime = new Date(startTime.getTime() + pauseDuration*1000);
-    breakTime = null;
+  if(!working){
+    startTime = Date.now();
+    localStorage.setItem("startTime", startTime);
+    localStorage.setItem("working", true);
+    working = true;
     document.getElementById("status").innerText = "A trabalhar";
   }
 }
 
 function endWork(){
-  if(startTime){
-    let endTime = new Date();
-    let secondsWorked = (endTime - startTime) / 1000;
-    totalSeconds += secondsWorked;
-
-    let hours = totalSeconds / 3600;
-    document.getElementById("hoursToday").innerText = hours.toFixed(2) + " h";
-    document.getElementById("bankHours").innerText = hours.toFixed(2) + " h";
-    document.getElementById("salary").innerText = "CHF " + (hours * salaryPerHour).toFixed(2);
-
-    startTime = null;
-    breakTime = null;
+  if(working){
+    totalSeconds += Math.floor((Date.now() - startTime)/1000);
+    localStorage.setItem("totalSeconds", totalSeconds);
+    localStorage.setItem("working", false);
+    working = false;
     document.getElementById("status").innerText = "Parado";
   }
 }
+
+function startBreak(){
+  endWork();
+  document.getElementById("status").innerText = "Em pausa";
+}
+
+function endBreak(){
+  startWork();
+}
+
+setInterval(updateDisplay,1000);
+updateDisplay();
+
 </script>
 
 </body>
