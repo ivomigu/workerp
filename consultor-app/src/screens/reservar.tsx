@@ -138,7 +138,11 @@ export function Reservar({ inicio }: { inicio: Date }) {
             />
             <TextInput
               testID="input-email"
-              placeholder="Email (opcional)"
+              placeholder={
+                CONSULTOR.confirmacionPorEmail
+                  ? 'Email (para recibir la confirmación)'
+                  : 'Email (opcional)'
+              }
               defaultValue={cliente.email}
               onChangeText={setEmail}
               keyboardType="email-address"

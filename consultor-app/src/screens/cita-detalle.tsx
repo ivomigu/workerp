@@ -4,7 +4,7 @@ import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { Cargando, ErrorCarga } from '@/components/estado';
 import { Icon } from '@/components/icon';
 import { colors } from '@/constants/colors';
-import { MODALIDADES } from '@/constants/consultor';
+import { CONSULTOR, MODALIDADES } from '@/constants/consultor';
 import { useCancelarCita, useMisCitas } from '@/hooks/use-citas';
 import { formato } from '@/utils/agenda';
 
@@ -98,6 +98,13 @@ export function CitaDetalle({ id, nueva }: { id: string; nueva: boolean }) {
               {formato.hora(inicio)}.
             </Text>
           )}
+          {nueva && !cancelada && CONSULTOR.confirmacionPorEmail && cita.email ? (
+            <Text
+              testID="aviso-email"
+              style={{ color: colors.secondaryLabel, fontSize: 14, textAlign: 'center' }}>
+              Te enviamos la confirmación a {cita.email}.
+            </Text>
+          ) : null}
         </View>
       )}
 

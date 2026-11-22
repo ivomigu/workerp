@@ -124,6 +124,29 @@ configurado en su teléfono (México → +52, España → +34…), y lo guarda e
 teléfono del cliente no indica su país, se usa `codigoPais` de `src/constants/consultor.ts`
 (por defecto +52, México): cámbialo si atiendes desde otro país.
 
+### Email de confirmación para el cliente
+
+Cuando un cliente deja su email, recibe un email «Cita confirmada» con fecha, hora, modalidad y
+tema, y un archivo `cita.ics` para añadir la cita a su calendario (con recordatorio 1 hora antes).
+Si responde a ese email, la respuesta te llega a ti.
+
+Para escribir a los clientes, Resend exige un **dominio propio verificado** (por ejemplo
+`tuconsultoria.mx`). Sin él, solo te llegan tus avisos.
+
+1. **Resend → Domains → Add Domain**: escribe tu dominio y añade los registros DNS que te
+   indica en el sitio donde lo compraste (GoDaddy, Namecheap, Cloudflare…). Espera a que salga
+   **Verified**.
+2. **Supabase → Edge Functions → Secrets**: añade
+   - `AVISO_REMITENTE` = `Tu Nombre <citas@tudominio.mx>` (con tu dominio verificado)
+   - `CONSULTOR_NOMBRE` = tu nombre tal como lo verán los clientes (opcional)
+3. **Edge Functions → aviso-nueva-cita**: pega el `index.ts` actualizado y pulsa **Deploy**.
+4. En `src/constants/consultor.ts` pon `confirmacionPorEmail: true`. Así la app le dice al cliente
+   que recibirá la confirmación por email.
+
+Si algo falla, en **Edge Functions → aviso-nueva-cita → Logs** cada llamada dice
+`cliente: confirmación enviada`, `omitido: falta AVISO_REMITENTE…` o `error al enviar…`.
+Un fallo del email al cliente nunca impide que te llegue tu aviso, ni al revés.
+
 ### Reglas que aplica la base de datos
 
 - Un horario no puede tener dos citas confirmadas.

@@ -25,6 +25,12 @@ export const CONSULTOR = {
   /** Idioma y país para escribir fechas y horas. */
   idioma: 'es-MX',
   /**
+   * Ponlo en true cuando tengas un dominio verificado en Resend y el secret
+   * AVISO_REMITENTE configurado: la app avisará al cliente de que recibirá
+   * la confirmación por email.
+   */
+  confirmacionPorEmail: false,
+  /**
    * Horas de inicio de cada sesión por día de la semana
    * (0 = domingo, 1 = lunes … 6 = sábado). Un día sin entrada no se atiende.
    */
