@@ -1,5 +1,7 @@
 import type { Modalidad } from '@/constants/consultor';
-import { asegurarSesion, supabase, supabaseConfigurado } from '@/lib/supabase';
+import { asegurarSesion, modoDemo, supabase, supabaseConfigurado } from '@/lib/supabase';
+import * as demo from '@/utils/demo';
+import { HorarioOcupadoError, ReglaError } from '@/utils/errores';
 
 export type Cita = {
   id: string;
@@ -51,9 +53,7 @@ function aCita(f: Fila): Cita {
   };
 }
 
-export class HorarioOcupadoError extends Error {}
-/** Errores que el servidor explica con un mensaje para el cliente. */
-export class ReglaError extends Error {}
+export { HorarioOcupadoError, ReglaError };
 
 function comprobarConfig() {
   if (!supabaseConfigurado) {
@@ -72,6 +72,7 @@ function traducirError(error: { code?: string; message: string }): Error {
 
 /** Horas ya reservadas por cualquier cliente (sin datos personales). */
 export async function obtenerOcupados(desde: Date, hasta: Date): Promise<number[]> {
+  if (modoDemo) return demo.obtenerOcupados(desde, hasta);
   comprobarConfig();
   const { data, error } = await supabase.rpc('horarios_ocupados', {
     desde: desde.toISOString(),
@@ -83,6 +84,7 @@ export async function obtenerOcupados(desde: Date, hasta: Date): Promise<number[
 
 /** Las citas de este teléfono. */
 export async function obtenerMisCitas(): Promise<Cita[]> {
+  if (modoDemo) return demo.obtenerMisCitas();
   comprobarConfig();
   await asegurarSesion();
   const { data: sesion } = await supabase.auth.getSession();
@@ -99,6 +101,7 @@ export async function obtenerMisCitas(): Promise<Cita[]> {
 }
 
 export async function crearCita(datos: NuevaCita): Promise<Cita> {
+  if (modoDemo) return demo.crearCita(datos);
   comprobarConfig();
   await asegurarSesion();
   const { data, error } = await supabase
@@ -120,6 +123,7 @@ export async function crearCita(datos: NuevaCita): Promise<Cita> {
 }
 
 export async function cancelarCita(id: string): Promise<void> {
+  if (modoDemo) return demo.cancelarCita(id);
   comprobarConfig();
   await asegurarSesion();
   const { data, error } = await supabase
@@ -137,6 +141,7 @@ export type Consultor = { email: string };
 
 /** El consultor con sesión iniciada en este teléfono, o null. */
 export async function obtenerConsultor(): Promise<Consultor | null> {
+  if (modoDemo) return demo.obtenerConsultor();
   if (!supabaseConfigurado) return null;
   const { data } = await supabase.auth.getSession();
   const user = data.session?.user;
@@ -147,6 +152,7 @@ export async function obtenerConsultor(): Promise<Consultor | null> {
 }
 
 export async function entrarConsultor(email: string, clave: string): Promise<Consultor> {
+  if (modoDemo) return demo.entrarConsultor(email, clave);
   comprobarConfig();
   const { error } = await supabase.auth.signInWithPassword({ email, password: clave });
   if (error) {
@@ -164,11 +170,13 @@ export async function entrarConsultor(email: string, clave: string): Promise<Con
 }
 
 export async function salirConsultor() {
+  if (modoDemo) return demo.salirConsultor();
   await supabase.auth.signOut();
 }
 
 /** Todas las citas (la base de datos solo se las da al consultor). */
 export async function obtenerTodasLasCitas(): Promise<Cita[]> {
+  if (modoDemo) return demo.obtenerTodasLasCitas();
   comprobarConfig();
   const { data, error } = await supabase.from('citas').select(COLUMNAS).order('inicio');
   if (error) throw traducirError(error);

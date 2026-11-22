@@ -60,6 +60,13 @@ export function sumarDias(d: Date, dias: number): Date {
   return enZona(u.getUTCFullYear(), u.getUTCMonth() + 1, u.getUTCDate(), 12, 0);
 }
 
+/** Año, mes (1–12), día y día de la semana (0 = domingo) de hoy + `offset` días, en la zona del consultor. */
+export function diaEnZona(offset: number, ahora = new Date()) {
+  const hoy = partesEnZona(ahora.getTime());
+  const u = new Date(Date.UTC(hoy.y, hoy.m - 1, hoy.d + offset));
+  return { y: u.getUTCFullYear(), m: u.getUTCMonth() + 1, d: u.getUTCDate(), dow: u.getUTCDay() };
+}
+
 /** Calcula los próximos días de atención y los horarios libres de cada uno. */
 export function calcularAgenda(horasOcupadas: number[], ahora = new Date()): Dia[] {
   const ocupados = new Set(horasOcupadas);

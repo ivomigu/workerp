@@ -2,6 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
+import { AvisoDemo } from '@/components/aviso-demo';
 import { AvisoDesactualizado, Cargando, ErrorCarga } from '@/components/estado';
 import { Icon } from '@/components/icon';
 import { colors } from '@/constants/colors';
@@ -49,6 +50,7 @@ export function Agendar() {
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={{ paddingVertical: 16, gap: 28 }}
       refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} />}>
+      <AvisoDemo />
       <ConsultorCard />
 
       {ocupados.data === undefined ? (

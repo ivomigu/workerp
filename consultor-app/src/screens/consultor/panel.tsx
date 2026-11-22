@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, RefreshControl, SectionList, Text, View } from 'react-native';
 
+import { AvisoDemo } from '@/components/aviso-demo';
 import { AvisoDesactualizado, Cargando, ErrorCarga } from '@/components/estado';
 import { Icon } from '@/components/icon';
 import { colors } from '@/constants/colors';
@@ -82,6 +83,9 @@ export function PanelConsultor({ email }: { email: string }) {
       }
       ListHeaderComponent={
         <View style={{ gap: 16, paddingBottom: 4 }}>
+          <View style={{ marginHorizontal: -16 }}>
+            <AvisoDemo />
+          </View>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Resumen titulo="Hoy" valor={citas.data ? hoy : null} />
             <Resumen titulo="Próximos 7 días" valor={citas.data ? semana : null} />

@@ -3,6 +3,17 @@
 App de Expo (iOS y Android) para que los clientes de un consultor financiero vean los
 horarios libres, agenden una cita y la confirmen.
 
+## Modo demostración
+
+Si abres la app **sin** configurar Supabase (sin archivo `.env.local`), funciona en **modo
+demostración**: trae citas de ejemplo de otros clientes, puedes reservar, cancelar y entrar como
+consultor con `demo@consultor.mx` / `demo1234` (ya vienen escritos). Todo se guarda solo en ese
+teléfono y no se envían emails. Un aviso arriba lo indica; al tocarlo puedes reiniciar los datos
+de ejemplo.
+
+Para forzarlo aunque tengas Supabase configurado, añade `EXPO_PUBLIC_DEMO=1` a `.env.local`.
+Cuando pongas tus datos de Supabase en `.env.local`, la app deja el modo demostración sola.
+
 ## Probarla en tu celular con Expo Go
 
 Necesitas Node.js 20 o más nuevo en la computadora (https://nodejs.org).

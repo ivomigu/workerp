@@ -9,6 +9,12 @@ const key = process.env.EXPO_PUBLIC_SUPABASE_KEY;
 /** false si faltan las variables de .env.local (ver README). */
 export const supabaseConfigurado = Boolean(url && key);
 
+/**
+ * Modo demostración: sin Supabase configurado (o con EXPO_PUBLIC_DEMO=1) la app
+ * funciona con datos de ejemplo guardados solo en este teléfono.
+ */
+export const modoDemo = process.env.EXPO_PUBLIC_DEMO === '1' || !supabaseConfigurado;
+
 export const supabase = createClient(url || 'http://localhost', key || 'sin-configurar', {
   auth: {
     // La sesión anónima de cada teléfono se guarda con expo-sqlite.
