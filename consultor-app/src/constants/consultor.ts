@@ -11,6 +11,11 @@ export const CONSULTOR = {
   /** Horas mínimas de anticipación para reservar. */
   anticipacionMinHoras: 2,
   /**
+   * Prefijo que se añade a los teléfonos escritos sin código de país cuando el
+   * teléfono del cliente no indica en qué país está. Cámbialo por el tuyo.
+   */
+  codigoPais: '+34',
+  /**
    * Horas de inicio de cada sesión por día de la semana
    * (0 = domingo, 1 = lunes … 6 = sábado). Un día sin entrada no se atiende.
    */

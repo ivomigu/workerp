@@ -7,7 +7,9 @@ import { CONSULTOR, MODALIDADES, TEMAS, type Modalidad } from '@/constants/consu
 import { useCrearCita } from '@/hooks/use-citas';
 import { formato } from '@/utils/agenda';
 import { HorarioOcupadoError, ReglaError } from '@/utils/api';
+import { prefijoDelTelefono } from '@/utils/codigo-pais';
 import { leerCliente } from '@/utils/storage';
+import { normalizarTelefono, telefonoValido } from '@/utils/telefono';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -20,6 +22,7 @@ export function Reservar({ inicio }: { inicio: Date }) {
   const crear = useCrearCita();
   const [nombre, setNombre] = useState(cliente.nombre);
   const [telefono, setTelefono] = useState(cliente.telefono);
+  const [prefijo] = useState(prefijoDelTelefono);
   const [email, setEmail] = useState(cliente.email);
   const [comentario, setComentario] = useState('');
   const [modalidad, setModalidad] = useState<Modalidad>('videollamada');
@@ -28,8 +31,12 @@ export function Reservar({ inicio }: { inicio: Date }) {
   function confirmar() {
     if (crear.isPending) return;
     const faltan: string[] = [];
+    // Añade el código de país si el cliente no lo escribió.
+    const telefonoIntl = normalizarTelefono(telefono, prefijo);
     if (nombre.trim().length < 2) faltan.push('tu nombre');
-    if (telefono.replace(/\D/g, '').length < 7) faltan.push('un teléfono válido');
+    if (!telefonoValido(telefonoIntl) || telefono.replace(/\D/g, '').length < 6) {
+      faltan.push('un teléfono válido');
+    }
     if (email.trim() && !EMAIL_RE.test(email.trim())) faltan.push('un email válido');
     if (faltan.length) {
       Alert.alert('Faltan datos', `Por favor escribe ${faltan.join(', ')}.`);
@@ -43,7 +50,7 @@ export function Reservar({ inicio }: { inicio: Date }) {
         modalidad,
         tema,
         nombre: nombre.trim(),
-        telefono: telefono.trim(),
+        telefono: telefonoIntl,
         email: email.trim(),
         comentario: comentario.trim(),
       },
@@ -139,6 +146,9 @@ export function Reservar({ inicio }: { inicio: Date }) {
               autoCorrect={false}
               autoComplete="email"
             />
+            <FieldGroup.SectionFooter>
+              <Text>{`Si no escribes el código de país, añadiremos ${prefijo}.`}</Text>
+            </FieldGroup.SectionFooter>
           </FieldGroup.Section>
 
           <FieldGroup.Section title="Comentario">

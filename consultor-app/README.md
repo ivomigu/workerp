@@ -105,7 +105,15 @@ por WhatsApp o email, y cancelar.
 
 Solo las cuentas de la tabla `consultores` pueden ver el panel. Si cancelas tú una cita, no te
 llega el email de cancelación y el cliente no recibe aviso automático: avísale con los botones
-de la ficha. Para que WhatsApp funcione, el teléfono del cliente debe incluir el código de país.
+de la ficha.
+
+### Teléfonos con código de país
+
+Si el cliente escribe su teléfono sin código de país, la app lo añade sola usando el país
+configurado en su teléfono (México → +52, España → +34…), y lo guarda en formato internacional
+(+525512345678). Así los botones de llamar y WhatsApp funcionan desde cualquier país. Si el
+teléfono del cliente no indica su país, se usa `codigoPais` de `src/constants/consultor.ts`
+(por defecto +34): cámbialo por el de tu país.
 
 ### Reglas que aplica la base de datos
 

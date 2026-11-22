@@ -7,6 +7,8 @@ import { colors } from '@/constants/colors';
 import { MODALIDADES } from '@/constants/consultor';
 import { useCancelarComoConsultor, useTodasLasCitas } from '@/hooks/use-consultor';
 import { formato } from '@/utils/agenda';
+import { prefijoDelTelefono } from '@/utils/codigo-pais';
+import { enlaceWhatsApp, normalizarTelefono } from '@/utils/telefono';
 
 /** Ficha de una cita para el consultor, con botones para contactar al cliente. */
 export function CitaConsultor({ id }: { id: string }) {
@@ -39,7 +41,8 @@ export function CitaConsultor({ id }: { id: string }) {
   const cancelada = cita.estado === 'cancelada';
   const futura = inicio.getTime() > Date.now();
   const modalidad = MODALIDADES.find((m) => m.value === cita.modalidad)?.label ?? cita.modalidad;
-  const digitos = cita.telefono.replace(/[^\d+]/g, '');
+  // Las citas antiguas pueden no tener código de país: se añade el de este teléfono.
+  const telefonoIntl = normalizarTelefono(cita.telefono, prefijoDelTelefono());
 
   function abrir(url: string) {
     Linking.openURL(url).catch(() =>
@@ -70,7 +73,7 @@ export function CitaConsultor({ id }: { id: string }) {
     ['Hora', formato.rangoHora(inicio, cita.duracionMin)],
     ['Modalidad', modalidad],
     ['Tema', cita.tema],
-    ['Teléfono', cita.telefono],
+    ['Teléfono', telefonoIntl],
     ...(cita.email ? ([['Email', cita.email]] as [string, string][]) : []),
     ...(cita.comentario ? ([['Comentario', cita.comentario]] as [string, string][]) : []),
     [
@@ -106,12 +109,12 @@ export function CitaConsultor({ id }: { id: string }) {
         <Accion
           label="Llamar"
           icono={{ ios: 'phone.fill', android: 'call' }}
-          onPress={() => abrir(`tel:${digitos}`)}
+          onPress={() => abrir(`tel:${telefonoIntl}`)}
         />
         <Accion
           label="WhatsApp"
           icono={{ ios: 'message.fill', android: 'chat' }}
-          onPress={() => abrir(`https://wa.me/${digitos.replace('+', '')}`)}
+          onPress={() => abrir(enlaceWhatsApp(telefonoIntl))}
         />
         {cita.email ? (
           <Accion
