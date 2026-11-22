@@ -3,7 +3,7 @@
  * Edita este archivo para cambiar nombre, horas o duración de las sesiones.
  */
 export const CONSULTOR = {
-  nombre: 'Tu Consultor Financiero',
+  nombre: 'Ivomiguel',
   especialidad: 'Inversiones, ahorro y planificación',
   duracionMin: 60,
   /** Cuántos días hacia adelante pueden ver los clientes. */
