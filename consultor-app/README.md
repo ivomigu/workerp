@@ -129,6 +129,8 @@ teléfono del cliente no indica su país, se usa `codigoPais` de `src/constants/
 Cuando un cliente deja su email, recibe un email «Cita confirmada» con fecha, hora, modalidad y
 tema, y un archivo `cita.ics` para añadir la cita a su calendario (con recordatorio 1 hora antes).
 Si responde a ese email, la respuesta te llega a ti.
+Si el cliente cancela desde la app, también recibe un email «Cita cancelada». (Si cancelas tú desde
+el panel, no se envía nada: avísale con los botones de la ficha.)
 
 Para escribir a los clientes, Resend exige un **dominio propio verificado** (por ejemplo
 `tuconsultoria.mx`). Sin él, solo te llegan tus avisos.
@@ -141,7 +143,7 @@ Para escribir a los clientes, Resend exige un **dominio propio verificado** (por
    - `CONSULTOR_NOMBRE` = tu nombre tal como lo verán los clientes (opcional)
 3. **Edge Functions → aviso-nueva-cita**: pega el `index.ts` actualizado y pulsa **Deploy**.
 4. En `src/constants/consultor.ts` pon `confirmacionPorEmail: true`. Así la app le dice al cliente
-   que recibirá la confirmación por email.
+   que recibirá los emails de confirmación y de cancelación.
 
 Si algo falla, en **Edge Functions → aviso-nueva-cita → Logs** cada llamada dice
 `cliente: confirmación enviada`, `omitido: falta AVISO_REMITENTE…` o `error al enviar…`.

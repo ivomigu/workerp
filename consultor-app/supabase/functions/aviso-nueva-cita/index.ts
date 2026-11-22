@@ -1,7 +1,8 @@
 // Edge Function de Supabase. La llama la base de datos (triggers) justo después
 // de cada cambio y envía:
 //   • a ti, un aviso cuando alguien agenda o cancela;
-//   • al cliente, la confirmación de su cita (con un archivo para su calendario).
+//   • al cliente, la confirmación de su cita (con un archivo para su calendario)
+//     y otro email si la cancela.
 //
 // Secrets (Supabase → Edge Functions → Secrets):
 //   RESEND_API_KEY    clave de https://resend.com
@@ -155,6 +156,43 @@ ${tabla(filas)}
   return { asunto, texto, html };
 }
 
+/** Email para el cliente cuando él mismo cancela su cita. */
+export function armarEmailCancelacionCliente(cita: Cita, zona: string, consultor: string) {
+  const { fecha, hora, inicio, rango, nombreZona } = fechas(cita, zona);
+  const nombre = cita.nombre.trim().split(/\s+/)[0] || cita.nombre;
+  const filas: [string, string][] = [
+    ['Fecha', fecha],
+    ['Hora', `${rango} (${nombreZona})`],
+    ['Modalidad', modalidadDe(cita)],
+    ['Tema', cita.tema],
+  ];
+  const calendario = 'Si la habías añadido a tu calendario, puedes borrarla.';
+  const pie =
+    'Cuando quieras, puedes agendar otra cita desde la app. ' +
+    'Si cancelaste por error o tienes alguna duda, responde a este email.';
+
+  const asunto = `Cita cancelada: ${fecha} a las ${hora(inicio)}`;
+  const texto = [
+    `Hola ${nombre}:`,
+    '',
+    `Tu cita con ${consultor} quedó cancelada.`,
+    '',
+    ...filas.map(([k, v]) => `${k}: ${v}`),
+    '',
+    calendario,
+    '',
+    pie,
+  ].join('\n');
+  const html = envoltorio(`
+<h2 style="margin:0 0 8px;color:#c62828">Tu cita quedó cancelada</h2>
+<p style="margin:0 0 16px">Hola ${escapar(nombre)}, cancelaste tu cita con ${escapar(consultor)}.</p>
+${tabla(filas)}
+<p style="margin:20px 0 4px;color:#666">${escapar(calendario)}</p>
+<p style="margin:0;color:#666">${escapar(pie)}</p>`);
+
+  return { asunto, texto, html };
+}
+
 /** Archivo .ics para añadir la cita al calendario del cliente. */
 export function crearIcs(cita: Cita, consultor: string, ahora = new Date()) {
   const utc = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
@@ -251,15 +289,15 @@ export async function manejar(req: Request, env: Entorno, enviar = fetch): Promi
     html: aviso.html,
   });
 
-  // 2. Confirmación para el cliente (solo reservas nuevas con email válido).
+  // 2. Email para el cliente: confirmación al reservar, aviso al cancelar.
   let cliente = 'sin email del cliente';
-  if (tipo === 'nueva' && cita.email && EMAIL_RE.test(cita.email)) {
+  if (cita.email && EMAIL_RE.test(cita.email)) {
     if (remitente.includes('resend.dev')) {
       cliente = 'omitido: falta AVISO_REMITENTE con un dominio verificado';
       console.warn(
-        'No se envió la confirmación al cliente: configura AVISO_REMITENTE con un dominio verificado en Resend.',
+        'No se envió el email al cliente: configura AVISO_REMITENTE con un dominio verificado en Resend.',
       );
-    } else {
+    } else if (tipo === 'nueva') {
       const c = armarEmailCliente(cita, zona, consultor);
       const ok = await enviarEmail(enviar, apiKey, {
         from: remitente,
@@ -273,9 +311,18 @@ export async function manejar(req: Request, env: Entorno, enviar = fetch): Promi
         ],
       });
       cliente = ok ? 'confirmación enviada' : 'error al enviar la confirmación';
+    } else {
+      const c = armarEmailCancelacionCliente(cita, zona, consultor);
+      const ok = await enviarEmail(enviar, apiKey, {
+        from: remitente,
+        to: [cita.email],
+        reply_to: destino,
+        subject: c.asunto,
+        text: c.texto,
+        html: c.html,
+      });
+      cliente = ok ? 'cancelación enviada' : 'error al enviar la cancelación';
     }
-  } else if (tipo === 'cancelada') {
-    cliente = 'no aplica';
   }
 
   if (!avisoOk) return new Response(`No se pudo enviar tu aviso; cliente: ${cliente}`, { status: 502 });

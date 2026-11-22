@@ -98,6 +98,13 @@ export function CitaDetalle({ id, nueva }: { id: string; nueva: boolean }) {
               {formato.hora(inicio)}.
             </Text>
           )}
+          {cancelada && CONSULTOR.confirmacionPorEmail && cita.email ? (
+            <Text
+              testID="aviso-email-cancelacion"
+              style={{ color: colors.secondaryLabel, fontSize: 14, textAlign: 'center' }}>
+              Te enviamos un email con la cancelación a {cita.email}.
+            </Text>
+          ) : null}
           {nueva && !cancelada && CONSULTOR.confirmacionPorEmail && cita.email ? (
             <Text
               testID="aviso-email"
