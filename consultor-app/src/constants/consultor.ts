@@ -29,7 +29,7 @@ export const CONSULTOR = {
    * AVISO_REMITENTE configurado: la app avisará al cliente de que recibirá
    * la confirmación por email.
    */
-  confirmacionPorEmail: false,
+  confirmacionPorEmail: true,
   /**
    * Horas de inicio de cada sesión por día de la semana
    * (0 = domingo, 1 = lunes … 6 = sábado). Un día sin entrada no se atiende.
