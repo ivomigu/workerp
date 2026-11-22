@@ -1,5 +1,5 @@
-// Edge Function de Supabase: te envía un email cada vez que alguien agenda.
-// La llama la base de datos (trigger) justo después de guardar una cita nueva.
+// Edge Function de Supabase: te envía un email cada vez que alguien agenda
+// o cancela. La llama la base de datos (triggers) justo después del cambio.
 //
 // Secrets que necesita (Supabase → Edge Functions → Secrets):
 //   RESEND_API_KEY   clave de https://resend.com
@@ -23,10 +23,12 @@ type Cita = {
 
 type Entorno = (nombre: string) => string | undefined;
 
+export type TipoAviso = 'nueva' | 'cancelada';
+
 const escapar = (t: string) =>
   t.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
-export function armarEmail(cita: Cita, zona: string) {
+export function armarEmail(cita: Cita, zona: string, tipo: TipoAviso = 'nueva') {
   const inicio = new Date(cita.inicio);
   const fin = new Date(inicio.getTime() + cita.duracion_min * 60_000);
   const fecha = inicio.toLocaleDateString('es-ES', {
@@ -51,10 +53,16 @@ export function armarEmail(cita: Cita, zona: string) {
     ...(cita.comentario ? ([['Comentario', cita.comentario]] as [string, string][]) : []),
   ];
 
-  const asunto = `Nueva cita: ${fecha}, ${hora(inicio)} – ${cita.nombre}`;
-  const texto = ['Tienes una cita nueva.', '', ...filas.map(([k, v]) => `${k}: ${v}`)].join('\n');
+  const cancelada = tipo === 'cancelada';
+  const asunto = `${cancelada ? 'Cita cancelada' : 'Nueva cita'}: ${fecha}, ${hora(inicio)} – ${cita.nombre}`;
+  const titulo = cancelada ? 'Se canceló una cita' : 'Tienes una cita nueva';
+  const nota = cancelada ? 'El horario vuelve a estar libre para otros clientes.' : '';
+  const texto = [titulo + '.', ...(nota ? [nota] : []), '', ...filas.map(([k, v]) => `${k}: ${v}`)].join(
+    '\n'
+  );
   const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px">
-<h2 style="margin:0 0 16px">Tienes una cita nueva</h2>
+<h2 style="margin:0 0 8px;color:${cancelada ? '#c62828' : 'inherit'}">${titulo}</h2>
+${nota ? `<p style="margin:0 0 16px;color:#666">${nota}</p>` : '<div style="height:8px"></div>'}
 <table style="border-collapse:collapse;width:100%">${filas
     .map(
       ([k, v]) =>
@@ -78,14 +86,23 @@ export async function manejar(req: Request, env: Entorno, enviar = fetch): Promi
     return new Response('No autorizado', { status: 401 });
   }
 
-  let cuerpo: { type?: string; record?: Cita };
+  let cuerpo: { type?: string; record?: Cita; old_record?: Pick<Cita, 'estado'> };
   try {
     cuerpo = await req.json();
   } catch {
     return new Response('JSON no válido', { status: 400 });
   }
   const cita = cuerpo.record;
-  if (cuerpo.type !== 'INSERT' || !cita || cita.estado !== 'confirmada') {
+  let tipo: TipoAviso;
+  if (cuerpo.type === 'INSERT' && cita?.estado === 'confirmada') {
+    tipo = 'nueva';
+  } else if (
+    cuerpo.type === 'UPDATE' &&
+    cita?.estado === 'cancelada' &&
+    cuerpo.old_record?.estado === 'confirmada'
+  ) {
+    tipo = 'cancelada';
+  } else {
     return new Response('Ignorado', { status: 200 });
   }
 
@@ -96,7 +113,7 @@ export async function manejar(req: Request, env: Entorno, enviar = fetch): Promi
     return new Response('Falta configuración', { status: 500 });
   }
 
-  const { asunto, texto, html } = armarEmail(cita, env('ZONA_HORARIA') || 'Europe/Madrid');
+  const { asunto, texto, html } = armarEmail(cita, env('ZONA_HORARIA') || 'Europe/Madrid', tipo);
   const respuesta = await enviar('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },

@@ -62,7 +62,7 @@ todas desde el panel de Supabase.
 En Supabase → **Table Editor → agenda_consultor**: fecha, hora, estado, nombre,
 teléfono, email, modalidad, tema y comentario, de la más reciente a la más antigua.
 
-### Recibir un email cuando alguien agenda
+### Recibir un email cuando alguien agenda o cancela
 
 Usa [Resend](https://resend.com) (gratis hasta 3.000 emails al mes) y una Edge Function.
 
@@ -82,7 +82,9 @@ Usa [Resend](https://resend.com) (gratis hasta 3.000 emails al mes) y una Edge F
    (la función se protege con tu clave secreta).
 5. **SQL Editor**: abre `supabase/migrations/20261122010000_aviso_email.sql`, cambia las dos
    líneas marcadas con «CAMBIA» (tu Project URL y la clave secreta del paso 2) y pulsa **Run**.
-6. Agenda una cita de prueba desde la app. El email llega en unos segundos.
+6. En **SQL Editor**, ejecuta también `supabase/migrations/20261122020000_aviso_cancelacion.sql`
+   (no hay que cambiar nada) para recibir otro email cuando un cliente cancela.
+7. Agenda una cita de prueba desde la app y luego cancélala. Te llegan dos emails en unos segundos.
 
 Si no llega: mira **Edge Functions → aviso-nueva-cita → Logs**. `401` significa que la clave
 secreta no coincide entre el paso 3 y el 5; `502` significa que Resend rechazó el envío
