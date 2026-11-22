@@ -25,6 +25,11 @@ export const CONSULTOR = {
   /** Idioma y país para escribir fechas y horas. */
   idioma: 'es-MX',
   /**
+   * Dirección web de tu aviso de privacidad (obligatorio para publicar en las
+   * tiendas). Ver legal/aviso-de-privacidad.html y el README.
+   */
+  urlPrivacidad: '',
+  /**
    * Ponlo en true cuando tengas un dominio verificado en Resend y el secret
    * AVISO_REMITENTE configurado: la app avisará al cliente de que recibirá
    * la confirmación por email.

@@ -1,4 +1,4 @@
-# Agenda Consultor
+# Citas Financieras
 
 App de Expo (iOS y Android) para que los clientes de un consultor financiero vean los
 horarios libres, agenden una cita y la confirmen.
@@ -169,3 +169,102 @@ Un fallo del email al cliente nunca impide que te llegue tu aviso, ni al revés.
 - Las citas tienen que ser en el futuro, como máximo a 60 días y en múltiplos de 15 minutos.
 - Cada cliente puede tener como máximo 3 citas próximas.
 - Los clientes ven qué horas están ocupadas, pero nunca los datos de otros clientes.
+
+## Publicar en App Store y Google Play
+
+La app se llama **Citas Financieras** y su identificador en las dos tiendas es
+`mx.agendaconsultor.app` (no se puede cambiar después de publicar). Las versiones para las
+tiendas se generan en la nube con **EAS** (de Expo): no necesitas una Mac ni Android Studio.
+
+### 1. Cuentas (una sola vez)
+
+| Cuenta | Costo | Notas |
+|---|---|---|
+| [Expo](https://expo.dev/signup) | Gratis (con límite de builds al mes) | Genera las versiones para las tiendas. |
+| [Apple Developer Program](https://developer.apple.com/programs/) | 99 USD al año | Como persona física sale tu nombre en la tienda; para que salga tu empresa necesitas cuenta de organización (requiere número D-U-N-S). |
+| [Google Play Console](https://play.google.com/console/signup) | 25 USD, pago único | Las cuentas **personales** nuevas deben hacer una prueba cerrada con al menos 12 personas durante 14 días antes de publicar. |
+
+### 2. Antes de generar la versión final
+
+1. En `src/constants/consultor.ts` cambia `nombre` y `especialidad` por los tuyos.
+2. Completa lo que está entre `[CORCHETES]` en `legal/aviso-de-privacidad.html` y publícalo en
+   una dirección web pública (tu sitio, GitHub Pages…). Pon esa dirección en `urlPrivacidad`.
+   La app muestra el enlace al pie de «Agendar» y en el formulario de reserva.
+   Conviene que lo revise un abogado.
+3. Termina la configuración de Supabase (fases 1 a 4 de este README).
+4. **Supabase gratis se pausa** si pasa una semana sin actividad, y la app dejaría de funcionar.
+   Para una app publicada, valora el plan de pago o revisa que tenga uso constante.
+
+Si falta algo de esto, el build de producción **se detiene** con un mensaje que dice qué
+falta (lo comprueba `app.config.js`). Así no se publica por error la versión de demostración.
+
+### 3. Conecta el proyecto con EAS (una sola vez)
+
+```bash
+npx --yes eas-cli@latest login
+npx --yes eas-cli@latest init
+```
+
+`init` añade un `projectId` en `app.json`: guarda ese cambio en git.
+
+Después guarda tus datos de Supabase en EAS (el archivo `.env.local` no se sube a la nube):
+
+```bash
+npx --yes eas-cli@latest env:create --environment production --name EXPO_PUBLIC_SUPABASE_URL --value "https://TU-PROYECTO.supabase.co" --visibility plaintext
+npx --yes eas-cli@latest env:create --environment production --name EXPO_PUBLIC_SUPABASE_KEY --value "sb_publishable_TU_CLAVE" --visibility plaintext
+```
+
+La clave *publishable* puede ir en la app; nunca pongas la *secret* ni la *service_role*.
+Repite los dos comandos con `--environment preview` si quieres probar versiones en tu teléfono
+antes de publicar.
+
+### 4. (Opcional) Prueba la app instalada en tu teléfono
+
+```bash
+npx --yes eas-cli@latest build --profile preview --platform android
+```
+
+Al terminar te da un enlace para instalar el APK en cualquier Android. En iPhone, las pruebas se
+hacen mejor con TestFlight (paso 6).
+
+### 5. Genera las versiones para las tiendas
+
+```bash
+npx --yes eas-cli@latest build --profile production --platform all
+```
+
+- La primera vez, para iOS te pedirá entrar con tu cuenta de Apple y crear los certificados:
+  deja que EAS los gestione.
+- Para Android, deja que EAS genere y guarde la llave de firma.
+- El número de compilación sube solo en cada build. Para una versión nueva visible
+  (1.0.1, 1.1.0…) cambia `version` en `app.json`.
+
+### 6. Sube a la App Store
+
+1. En [App Store Connect](https://appstoreconnect.apple.com) → **Apps → + → Nueva app**:
+   plataforma iOS, nombre **Citas Financieras**, idioma español (México),
+   identificador de paquete `mx.agendaconsultor.app`, SKU `citas-financieras`.
+2. Sube el build (usa el ID que muestra `eas build` o expo.dev):
+   ```bash
+   npx --yes eas-cli@latest submit -p ios --profile production --id ID_DEL_BUILD
+   ```
+3. Cuando aparezca en **TestFlight** (tarda unos minutos), pruébalo en tu iPhone.
+4. Completa la ficha con los textos de `store/ficha-tiendas.md` (descripción, capturas,
+   privacidad, notas para la revisión), elige el build y pulsa **Enviar a revisión**.
+
+### 7. Sube a Google Play
+
+1. En [Play Console](https://play.google.com/console) → **Crear app**: nombre
+   **Citas Financieras**, español (México), app, gratis.
+2. La **primera** subida es manual: descarga el archivo `.aab` del build desde expo.dev y súbelo
+   en **Pruebas → Prueba interna → Crear versión**.
+3. Para las siguientes, configura la cuenta de servicio de Google con
+   `npx --yes eas-cli@latest credentials -p android` y sube con:
+   ```bash
+   npx --yes eas-cli@latest submit -p android --profile production --id ID_DEL_BUILD
+   ```
+   (va a la prueba interna; desde Play Console la promueves a producción).
+4. Completa la ficha, **Seguridad de los datos**, clasificación de contenido y público objetivo
+   con lo que dice `store/ficha-tiendas.md`.
+5. Si tu cuenta es personal y nueva: crea una **prueba cerrada** con 12 personas durante 14 días
+   y después solicita el acceso a producción.

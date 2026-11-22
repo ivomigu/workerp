@@ -10,6 +10,7 @@ import { CONSULTOR } from '@/constants/consultor';
 import { useOcupados } from '@/hooks/use-citas';
 import { useConsultor } from '@/hooks/use-consultor';
 import { calcularAgenda, formato } from '@/utils/agenda';
+import { abrirAvisoDePrivacidad, hayAvisoDePrivacidad } from '@/utils/privacidad';
 
 import { ConsultorCard } from './consultor-card';
 import { DayStrip } from './day-strip';
@@ -118,6 +119,23 @@ export function Agendar() {
           {consultor.data ? 'Panel del consultor' : 'Acceso consultor'}
         </Text>
       </Pressable>
+
+      {hayAvisoDePrivacidad && (
+        <Pressable
+          testID="aviso-privacidad"
+          accessibilityRole="link"
+          onPress={abrirAvisoDePrivacidad}
+          style={({ pressed }) => ({
+            alignSelf: 'center',
+            padding: 8,
+            opacity: pressed ? 0.5 : 1,
+          })}>
+          <Text
+            style={{ color: colors.secondaryLabel, fontSize: 13, textDecorationLine: 'underline' }}>
+            Aviso de privacidad
+          </Text>
+        </Pressable>
+      )}
     </ScrollView>
   );
 }

@@ -9,6 +9,7 @@ import { useCrearCita } from '@/hooks/use-citas';
 import { formato } from '@/utils/agenda';
 import { HorarioOcupadoError, ReglaError } from '@/utils/api';
 import { prefijoDelTelefono } from '@/utils/codigo-pais';
+import { abrirAvisoDePrivacidad, hayAvisoDePrivacidad } from '@/utils/privacidad';
 import { leerCliente } from '@/utils/storage';
 import { normalizarTelefono, telefonoValido } from '@/utils/telefono';
 
@@ -176,7 +177,23 @@ export function Reservar({ inicio }: { inicio: Date }) {
               disabled={crear.isPending}
               label={crear.isPending ? 'Confirmando…' : 'Confirmar cita'}
             />
+            {hayAvisoDePrivacidad ? (
+              <FieldGroup.SectionFooter>
+                <Text>Usamos tus datos solo para gestionar tu cita.</Text>
+              </FieldGroup.SectionFooter>
+            ) : null}
           </FieldGroup.Section>
+
+          {hayAvisoDePrivacidad ? (
+            <FieldGroup.Section>
+              <Button
+                testID="ver-privacidad"
+                variant="text"
+                onPress={abrirAvisoDePrivacidad}
+                label="Aviso de privacidad"
+              />
+            </FieldGroup.Section>
+          ) : null}
         </FieldGroup>
       </Host>
     </>
