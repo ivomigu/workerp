@@ -62,6 +62,33 @@ todas desde el panel de Supabase.
 En Supabase → **Table Editor → agenda_consultor**: fecha, hora, estado, nombre,
 teléfono, email, modalidad, tema y comentario, de la más reciente a la más antigua.
 
+### Recibir un email cuando alguien agenda
+
+Usa [Resend](https://resend.com) (gratis hasta 3.000 emails al mes) y una Edge Function.
+
+1. **Resend:** crea una cuenta con tu email y ve a **API Keys → Create API Key**. Copia la clave
+   (empieza por `re_`). Sin dominio propio, Resend solo envía a tu propio email, que es justo lo
+   que necesitas.
+2. **Inventa una clave secreta** larga (por ejemplo, 30 letras y números al azar). La usarás en
+   los pasos 3 y 5.
+3. **Supabase → Edge Functions → Secrets**: añade
+   - `RESEND_API_KEY` = la clave de Resend
+   - `AVISO_EMAIL` = tu email
+   - `AVISO_SECRETO` = la clave secreta del paso 2
+   - `ZONA_HORARIA` = tu zona, por ejemplo `Europe/Madrid` o `America/Mexico_City` (opcional)
+4. **Supabase → Edge Functions → Deploy a new function → Via Editor**: llámala
+   `aviso-nueva-cita`, pega el contenido de `supabase/functions/aviso-nueva-cita/index.ts` y
+   pulsa **Deploy**. Después, en los ajustes de la función, **desactiva «Verify JWT»**
+   (la función se protege con tu clave secreta).
+5. **SQL Editor**: abre `supabase/migrations/20261122010000_aviso_email.sql`, cambia las dos
+   líneas marcadas con «CAMBIA» (tu Project URL y la clave secreta del paso 2) y pulsa **Run**.
+6. Agenda una cita de prueba desde la app. El email llega en unos segundos.
+
+Si no llega: mira **Edge Functions → aviso-nueva-cita → Logs**. `401` significa que la clave
+secreta no coincide entre el paso 3 y el 5; `502` significa que Resend rechazó el envío
+(revisa la clave de Resend y que `AVISO_EMAIL` sea el email de tu cuenta de Resend).
+Para corregir la URL o la clave del SQL: **Project Settings → Vault** (`aviso_url`, `aviso_secreto`).
+
 ### Reglas que aplica la base de datos
 
 - Un horario no puede tener dos citas confirmadas.
