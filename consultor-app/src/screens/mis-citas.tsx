@@ -1,24 +1,26 @@
 import { router } from 'expo-router';
-import { Pressable, SectionList, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, RefreshControl, SectionList, Text, View } from 'react-native';
 
+import { AvisoDesactualizado, Cargando, ErrorCarga } from '@/components/estado';
 import { Icon } from '@/components/icon';
 import { colors } from '@/constants/colors';
 import { MODALIDADES } from '@/constants/consultor';
-import { useCitas } from '@/hooks/use-citas';
+import { useMisCitas } from '@/hooks/use-citas';
 import { formato } from '@/utils/agenda';
-import type { Cita } from '@/utils/storage';
+import type { Cita } from '@/utils/api';
 
 export function MisCitas() {
-  const citas = useCitas();
+  const misCitas = useMisCitas();
+  const [refrescando, setRefrescando] = useState(false);
+  const citas = misCitas.data ?? [];
   const ahora = Date.now();
   const orden = (a: Cita, b: Cita) => a.inicio.localeCompare(b.inicio);
 
   const proximas = citas
     .filter((c) => c.estado === 'confirmada' && new Date(c.inicio).getTime() > ahora)
     .sort(orden);
-  const historial = citas
-    .filter((c) => !proximas.includes(c))
-    .sort((a, b) => orden(b, a));
+  const historial = citas.filter((c) => !proximas.includes(c)).sort((a, b) => orden(b, a));
 
   const secciones = [
     { title: 'Próximas', data: proximas },
@@ -47,7 +49,32 @@ export function MisCitas() {
         </Text>
       )}
       renderItem={({ item }) => <CitaFila cita={item} />}
-      ListEmptyComponent={<SinCitas />}
+      refreshControl={
+        <RefreshControl
+          refreshing={refrescando}
+          onRefresh={async () => {
+            setRefrescando(true);
+            await misCitas.refetch();
+            setRefrescando(false);
+          }}
+        />
+      }
+      ListHeaderComponent={
+        misCitas.data && misCitas.error ? (
+          <AvisoDesactualizado onReintentar={() => misCitas.refetch()} />
+        ) : undefined
+      }
+      ListEmptyComponent={
+        misCitas.data === undefined ? (
+          misCitas.error ? (
+            <ErrorCarga error={misCitas.error} onReintentar={() => misCitas.refetch()} />
+          ) : (
+            <Cargando />
+          )
+        ) : (
+          <SinCitas />
+        )
+      }
     />
   );
 }
@@ -81,17 +108,34 @@ function CitaFila({ cita }: { cita: Cita }) {
           borderCurve: 'continuous',
           backgroundColor: colors.fill,
         }}>
-        <Text style={{ color: colors.danger, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>
+        <Text
+          style={{
+            color: colors.danger,
+            fontSize: 12,
+            fontWeight: '700',
+            textTransform: 'uppercase',
+          }}>
           {formato.mesCorto(inicio)}
         </Text>
         <Text
-          style={{ color: colors.label, fontSize: 22, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+          style={{
+            color: colors.label,
+            fontSize: 22,
+            fontWeight: '700',
+            fontVariant: ['tabular-nums'],
+          }}>
           {inicio.getDate()}
         </Text>
       </View>
 
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ color: colors.label, fontSize: 17, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+        <Text
+          style={{
+            color: colors.label,
+            fontSize: 17,
+            fontWeight: '600',
+            fontVariant: ['tabular-nums'],
+          }}>
           {formato.rangoHora(inicio, cita.duracionMin)}
         </Text>
         <Text style={{ color: colors.secondaryLabel, fontSize: 14 }} numberOfLines={1}>
@@ -119,7 +163,9 @@ function SinCitas() {
         size={48}
         color={colors.secondaryLabel}
       />
-      <Text style={{ color: colors.label, fontSize: 20, fontWeight: '600' }}>Aún no tienes citas</Text>
+      <Text style={{ color: colors.label, fontSize: 20, fontWeight: '600' }}>
+        Aún no tienes citas
+      </Text>
       <Text style={{ color: colors.secondaryLabel, fontSize: 15, textAlign: 'center' }}>
         Elige un horario libre y agenda tu primera consulta.
       </Text>
@@ -127,7 +173,9 @@ function SinCitas() {
         accessibilityRole="button"
         onPress={() => router.navigate('/')}
         style={({ pressed }) => ({ padding: 12, opacity: pressed ? 0.6 : 1 })}>
-        <Text style={{ color: colors.accent, fontSize: 17, fontWeight: '600' }}>Ver horarios libres</Text>
+        <Text style={{ color: colors.accent, fontSize: 17, fontWeight: '600' }}>
+          Ver horarios libres
+        </Text>
       </Pressable>
     </View>
   );

@@ -1,5 +1,4 @@
 import { CONSULTOR } from '@/constants/consultor';
-import type { Cita } from '@/utils/storage';
 
 export type Dia = {
   fecha: Date;
@@ -12,10 +11,8 @@ function inicioDelDia(d: Date) {
 }
 
 /** Calcula los próximos días de atención y los horarios libres de cada uno. */
-export function calcularAgenda(citas: Cita[], ahora = new Date()): Dia[] {
-  const ocupados = new Set(
-    citas.filter((c) => c.estado === 'confirmada').map((c) => new Date(c.inicio).getTime())
-  );
+export function calcularAgenda(horasOcupadas: number[], ahora = new Date()): Dia[] {
+  const ocupados = new Set(horasOcupadas);
   const limite = ahora.getTime() + CONSULTOR.anticipacionMinHoras * 3600_000;
   const hoy = inicioDelDia(ahora);
   const dias: Dia[] = [];

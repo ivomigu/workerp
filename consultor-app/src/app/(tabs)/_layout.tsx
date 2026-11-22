@@ -1,10 +1,10 @@
 import { NativeTabs } from 'expo-router/native-tabs';
 
-import { useCitas } from '@/hooks/use-citas';
+import { useMisCitas } from '@/hooks/use-citas';
 
 export default function TabsLayout() {
-  const proximas = useCitas().filter(
-    (c) => c.estado === 'confirmada' && new Date(c.inicio).getTime() > Date.now()
+  const proximas = (useMisCitas().data ?? []).filter(
+    (c) => c.estado === 'confirmada' && new Date(c.inicio).getTime() > Date.now(),
   ).length;
 
   return (

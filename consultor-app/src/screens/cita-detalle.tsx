@@ -1,15 +1,32 @@
 import { router } from 'expo-router';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { Cargando, ErrorCarga } from '@/components/estado';
 import { Icon } from '@/components/icon';
 import { colors } from '@/constants/colors';
 import { MODALIDADES } from '@/constants/consultor';
-import { useCitas } from '@/hooks/use-citas';
+import { useCancelarCita, useMisCitas } from '@/hooks/use-citas';
 import { formato } from '@/utils/agenda';
-import { cancelarCita } from '@/utils/storage';
 
 export function CitaDetalle({ id, nueva }: { id: string; nueva: boolean }) {
-  const cita = useCitas().find((c) => c.id === id);
+  const misCitas = useMisCitas();
+  const cancelar = useCancelarCita();
+  const cita = misCitas.data?.find((c) => c.id === id);
+
+  if (!cita && misCitas.data === undefined) {
+    return (
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        style={{ backgroundColor: colors.background }}
+        contentContainerStyle={{ paddingVertical: 32 }}>
+        {misCitas.error ? (
+          <ErrorCarga error={misCitas.error} onReintentar={() => misCitas.refetch()} />
+        ) : (
+          <Cargando />
+        )}
+      </ScrollView>
+    );
+  }
 
   if (!cita) {
     return (
@@ -17,7 +34,9 @@ export function CitaDetalle({ id, nueva }: { id: string; nueva: boolean }) {
         contentInsetAdjustmentBehavior="automatic"
         style={{ backgroundColor: colors.background }}
         contentContainerStyle={{ padding: 32, alignItems: 'center' }}>
-        <Text style={{ color: colors.secondaryLabel, fontSize: 17 }}>No encontramos esta cita.</Text>
+        <Text style={{ color: colors.secondaryLabel, fontSize: 17 }}>
+          No encontramos esta cita.
+        </Text>
       </ScrollView>
     );
   }
@@ -30,7 +49,14 @@ export function CitaDetalle({ id, nueva }: { id: string; nueva: boolean }) {
   function pedirCancelacion() {
     Alert.alert('¿Cancelar la cita?', 'El horario quedará libre para otra persona.', [
       { text: 'No', style: 'cancel' },
-      { text: 'Cancelar cita', style: 'destructive', onPress: () => cancelarCita(cita!.id) },
+      {
+        text: 'Cancelar cita',
+        style: 'destructive',
+        onPress: () =>
+          cancelar.mutate(cita!.id, {
+            onError: (e) => Alert.alert('No se pudo cancelar', e.message),
+          }),
+      },
     ]);
   }
 
@@ -68,7 +94,8 @@ export function CitaDetalle({ id, nueva }: { id: string; nueva: boolean }) {
           </Text>
           {!cancelada && (
             <Text style={{ color: colors.secondaryLabel, fontSize: 16, textAlign: 'center' }}>
-              Te esperamos el {formato.fechaLarga(inicio).toLowerCase()} a las {formato.hora(inicio)}.
+              Te esperamos el {formato.fechaLarga(inicio).toLowerCase()} a las{' '}
+              {formato.hora(inicio)}.
             </Text>
           )}
         </View>
@@ -112,7 +139,12 @@ export function CitaDetalle({ id, nueva }: { id: string; nueva: boolean }) {
       <View style={{ gap: 8 }}>
         <Boton testID="listo" titulo="Listo" onPress={() => router.back()} principal />
         {!cancelada && futura && (
-          <Boton testID="cancelar-cita" titulo="Cancelar cita" onPress={pedirCancelacion} peligro />
+          <Boton
+            testID="cancelar-cita"
+            titulo={cancelar.isPending ? 'Cancelando…' : 'Cancelar cita'}
+            onPress={cancelar.isPending ? () => {} : pedirCancelacion}
+            peligro
+          />
         )}
       </View>
     </ScrollView>

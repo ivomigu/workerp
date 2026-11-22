@@ -18,8 +18,7 @@ export function SlotGrid({ libres, onSelect }: Props) {
   const ancho = Math.floor((Math.min(width, 600) - MARGEN * 2 - GAP * (COLUMNAS - 1)) / COLUMNAS);
 
   return (
-    <View
-      style={{ flexDirection: 'row', flexWrap: 'wrap', gap: GAP, paddingHorizontal: MARGEN }}>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: GAP, paddingHorizontal: MARGEN }}>
       {libres.map((inicio) => {
         const hora = formato.hora(inicio);
         return (

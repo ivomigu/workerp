@@ -42,7 +42,8 @@ export function DayStrip({ dias, seleccionado, onSelect }: Props) {
               backgroundColor: activo ? colors.accent : colors.card,
               opacity: pressed ? 0.7 : lleno && !activo ? 0.5 : 1,
             })}>
-            <Text style={{ color: sub, fontSize: 13, fontWeight: '600', textTransform: 'uppercase' }}>
+            <Text
+              style={{ color: sub, fontSize: 13, fontWeight: '600', textTransform: 'uppercase' }}>
               {formato.diaCorto(dia.fecha)}
             </Text>
             <Text

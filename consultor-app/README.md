@@ -40,5 +40,31 @@ Mientras la terminal siga abierta, cada cambio que guardes se ve al instante en 
 - `src/constants/colors.ts`: colores (usa los colores del sistema).
 - `src/screens/`: las pantallas. `src/app/`: la navegación (cada archivo es una ruta).
 
-Las citas se guardan en el propio teléfono (expo-sqlite). Para que el consultor vea
-las citas de todos sus clientes hace falta un servidor (por ejemplo, Supabase).
+## Conectar con Supabase (para que veas todas las citas)
+
+Las citas se guardan en Supabase. Cada teléfono entra como usuario anónimo (el
+cliente no se registra) y solo puede ver y cancelar sus propias citas. Tú las ves
+todas desde el panel de Supabase.
+
+1. Crea un proyecto gratis en https://supabase.com.
+2. **SQL Editor → New query**: pega todo el archivo
+   `supabase/migrations/20261122000000_citas.sql` y pulsa **Run**.
+   Si tu zona horaria no es `Europe/Madrid`, cámbiala en ese archivo antes (al final).
+3. **Authentication → Sign In / Providers**: activa **Allow anonymous sign-ins**.
+4. **Project Settings → API** (o *Data API* / *API Keys*): copia la **Project URL**
+   y la clave **publishable** (en proyectos antiguos se llama **anon public**).
+   Nunca uses la *secret* ni la *service_role* en la app.
+5. Copia `.env.example` como `.env.local` y pega esos dos valores.
+6. Reinicia con `npx expo start --clear`.
+
+### Ver las citas
+
+En Supabase → **Table Editor → agenda_consultor**: fecha, hora, estado, nombre,
+teléfono, email, modalidad, tema y comentario, de la más reciente a la más antigua.
+
+### Reglas que aplica la base de datos
+
+- Un horario no puede tener dos citas confirmadas.
+- Las citas tienen que ser en el futuro, como máximo a 60 días y en múltiplos de 15 minutos.
+- Cada cliente puede tener como máximo 3 citas próximas.
+- Los clientes ven qué horas están ocupadas, pero nunca los datos de otros clientes.

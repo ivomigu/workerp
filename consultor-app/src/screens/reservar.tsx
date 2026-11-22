@@ -1,21 +1,13 @@
-import {
-  Button,
-  FieldGroup,
-  Host,
-  Picker,
-  Row,
-  Spacer,
-  Text,
-  TextInput,
-} from '@expo/ui';
+import { Button, FieldGroup, Host, Picker, Row, Spacer, Text, TextInput } from '@expo/ui';
 import { router, Stack } from 'expo-router';
 import { useState } from 'react';
 import { Alert } from 'react-native';
 
 import { CONSULTOR, MODALIDADES, TEMAS, type Modalidad } from '@/constants/consultor';
-import { useCliente } from '@/hooks/use-citas';
+import { useCrearCita } from '@/hooks/use-citas';
 import { formato } from '@/utils/agenda';
-import { crearCita, HorarioOcupadoError } from '@/utils/storage';
+import { HorarioOcupadoError, ReglaError } from '@/utils/api';
+import { leerCliente } from '@/utils/storage';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -24,7 +16,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * cliente revisa el horario, deja sus datos y confirma la cita.
  */
 export function Reservar({ inicio }: { inicio: Date }) {
-  const cliente = useCliente();
+  const [cliente] = useState(leerCliente);
+  const crear = useCrearCita();
   const [nombre, setNombre] = useState(cliente.nombre);
   const [telefono, setTelefono] = useState(cliente.telefono);
   const [email, setEmail] = useState(cliente.email);
@@ -33,6 +26,7 @@ export function Reservar({ inicio }: { inicio: Date }) {
   const [tema, setTema] = useState<string>(TEMAS[0]);
 
   function confirmar() {
+    if (crear.isPending) return;
     const faltan: string[] = [];
     if (nombre.trim().length < 2) faltan.push('tu nombre');
     if (telefono.replace(/\D/g, '').length < 7) faltan.push('un teléfono válido');
@@ -42,8 +36,8 @@ export function Reservar({ inicio }: { inicio: Date }) {
       return;
     }
 
-    try {
-      const cita = crearCita({
+    crear.mutate(
+      {
         inicio: inicio.toISOString(),
         duracionMin: CONSULTOR.duracionMin,
         modalidad,
@@ -52,17 +46,26 @@ export function Reservar({ inicio }: { inicio: Date }) {
         telefono: telefono.trim(),
         email: email.trim(),
         comentario: comentario.trim(),
-      });
-      router.replace({ pathname: '/cita/[id]', params: { id: cita.id, nueva: '1' } });
-    } catch (e) {
-      if (e instanceof HorarioOcupadoError) {
-        Alert.alert('Horario no disponible', 'Alguien reservó esta hora hace un momento. Elige otra.', [
-          { text: 'Ver horarios', onPress: () => router.back() },
-        ]);
-      } else {
-        Alert.alert('No se pudo guardar', 'Inténtalo de nuevo.');
-      }
-    }
+      },
+      {
+        onSuccess: (cita) =>
+          router.replace({ pathname: '/cita/[id]', params: { id: cita.id, nueva: '1' } }),
+        onError: (e) => {
+          if (e instanceof HorarioOcupadoError) {
+            Alert.alert(
+              'Horario no disponible',
+              'Alguien reservó esta hora hace un momento. Elige otra.',
+              [{ text: 'Ver horarios', onPress: () => router.back() }],
+            );
+          } else if (e instanceof ReglaError) {
+            Alert.alert('No se pudo reservar', e.message);
+          } else {
+            // Los datos escritos se conservan para reintentar.
+            Alert.alert('No se pudo confirmar', e.message);
+          }
+        },
+      },
+    );
   }
 
   return (
@@ -146,12 +149,20 @@ export function Reservar({ inicio }: { inicio: Date }) {
               numberOfLines={3}
             />
             <FieldGroup.SectionFooter>
-              <Text>Tu cita queda confirmada al instante. Puedes cancelarla desde «Mis citas».</Text>
+              <Text>
+                Tu cita queda confirmada al instante. Puedes cancelarla desde «Mis citas».
+              </Text>
             </FieldGroup.SectionFooter>
           </FieldGroup.Section>
 
           <FieldGroup.Section>
-            <Button testID="confirmar" variant="filled" onPress={confirmar} label="Confirmar cita" />
+            <Button
+              testID="confirmar"
+              variant="filled"
+              onPress={confirmar}
+              disabled={crear.isPending}
+              label={crear.isPending ? 'Confirmando…' : 'Confirmar cita'}
+            />
           </FieldGroup.Section>
         </FieldGroup>
       </Host>

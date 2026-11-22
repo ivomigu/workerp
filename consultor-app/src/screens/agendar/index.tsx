@@ -1,11 +1,12 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 
+import { AvisoDesactualizado, Cargando, ErrorCarga } from '@/components/estado';
 import { Icon } from '@/components/icon';
 import { colors } from '@/constants/colors';
 import { CONSULTOR } from '@/constants/consultor';
-import { useCitas } from '@/hooks/use-citas';
+import { useOcupados } from '@/hooks/use-citas';
 import { calcularAgenda, formato } from '@/utils/agenda';
 
 import { ConsultorCard } from './consultor-card';
@@ -13,14 +14,28 @@ import { DayStrip } from './day-strip';
 import { SlotGrid } from './slot-grid';
 
 export function Agendar() {
-  const citas = useCitas();
+  const ocupados = useOcupados();
+  const { refetch } = ocupados;
   const [ahora, setAhora] = useState(() => new Date());
   const [diaElegido, setDiaElegido] = useState<number | null>(null);
+  const [refrescando, setRefrescando] = useState(false);
 
-  // Al volver a la pantalla, recalcula para ocultar horarios que ya pasaron.
-  useFocusEffect(useCallback(() => setAhora(new Date()), []));
+  // Al volver a la pantalla, oculta horas que ya pasaron y pide las reservas nuevas.
+  useFocusEffect(
+    useCallback(() => {
+      setAhora(new Date());
+      refetch();
+    }, [refetch]),
+  );
 
-  const dias = calcularAgenda(citas, ahora);
+  async function refrescar() {
+    setRefrescando(true);
+    setAhora(new Date());
+    await refetch();
+    setRefrescando(false);
+  }
+
+  const dias = calcularAgenda(ocupados.data ?? [], ahora);
   const dia =
     dias.find((d) => d.fecha.getTime() === diaElegido) ??
     dias.find((d) => d.libres.length > 0) ??
@@ -30,38 +45,52 @@ export function Agendar() {
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       style={{ backgroundColor: colors.background }}
-      contentContainerStyle={{ paddingVertical: 16, gap: 28 }}>
+      contentContainerStyle={{ paddingVertical: 16, gap: 28 }}
+      refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} />}>
       <ConsultorCard />
 
-      <View style={{ gap: 12 }}>
-        <SectionTitle>Elige un día</SectionTitle>
-        <DayStrip
-          dias={dias}
-          seleccionado={dia?.fecha}
-          onSelect={(d) => setDiaElegido(d.fecha.getTime())}
-        />
-      </View>
-
-      {dia && (
-        <View style={{ gap: 12 }}>
-          <SectionTitle
-            detalle={
-              dia.libres.length === 1 ? '1 horario libre' : `${dia.libres.length} horarios libres`
-            }>
-            {formato.fechaLarga(dia.fecha)}
-          </SectionTitle>
-
-          {dia.libres.length > 0 ? (
-            <SlotGrid
-              libres={dia.libres}
-              onSelect={(inicio) =>
-                router.push({ pathname: '/reservar', params: { inicio: inicio.toISOString() } })
-              }
+      {ocupados.data === undefined ? (
+        ocupados.error ? (
+          <ErrorCarga error={ocupados.error} onReintentar={() => refetch()} />
+        ) : (
+          <Cargando texto="Buscando horarios libres…" />
+        )
+      ) : (
+        <>
+          {ocupados.error && <AvisoDesactualizado onReintentar={() => refetch()} />}
+          <View style={{ gap: 12 }}>
+            <SectionTitle>Elige un día</SectionTitle>
+            <DayStrip
+              dias={dias}
+              seleccionado={dia?.fecha}
+              onSelect={(d) => setDiaElegido(d.fecha.getTime())}
             />
-          ) : (
-            <SinHorarios />
+          </View>
+
+          {dia && (
+            <View style={{ gap: 12 }}>
+              <SectionTitle
+                detalle={
+                  dia.libres.length === 1
+                    ? '1 horario libre'
+                    : `${dia.libres.length} horarios libres`
+                }>
+                {formato.fechaLarga(dia.fecha)}
+              </SectionTitle>
+
+              {dia.libres.length > 0 ? (
+                <SlotGrid
+                  libres={dia.libres}
+                  onSelect={(inicio) =>
+                    router.push({ pathname: '/reservar', params: { inicio: inicio.toISOString() } })
+                  }
+                />
+              ) : (
+                <SinHorarios />
+              )}
+            </View>
           )}
-        </View>
+        </>
       )}
 
       <Text
