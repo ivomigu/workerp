@@ -29,6 +29,11 @@ if (process.env.EXPO_OS !== 'web') {
 
 let sesion: Promise<void> | null = null;
 
+// Al cerrar sesión (el consultor pulsa «Salir»), la próxima acción crea otra anónima.
+supabase.auth.onAuthStateChange((evento) => {
+  if (evento === 'SIGNED_OUT') sesion = null;
+});
+
 /**
  * Cada teléfono entra como usuario anónimo (sin registro). Así Supabase sabe
  * qué citas son de quién, sin pedir contraseña al cliente.

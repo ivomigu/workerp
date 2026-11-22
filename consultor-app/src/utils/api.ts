@@ -85,7 +85,15 @@ export async function obtenerOcupados(desde: Date, hasta: Date): Promise<number[
 export async function obtenerMisCitas(): Promise<Cita[]> {
   comprobarConfig();
   await asegurarSesion();
-  const { data, error } = await supabase.from('citas').select(COLUMNAS).order('inicio');
+  const { data: sesion } = await supabase.auth.getSession();
+  const uid = sesion.session?.user.id;
+  if (!uid) return [];
+  // Filtra por usuario: si el consultor usa la app, aquí solo ve las suyas.
+  const { data, error } = await supabase
+    .from('citas')
+    .select(COLUMNAS)
+    .eq('user_id', uid)
+    .order('inicio');
   if (error) throw traducirError(error);
   return (data as Fila[]).map(aCita);
 }
@@ -121,4 +129,48 @@ export async function cancelarCita(id: string): Promise<void> {
     .select('id');
   if (error) throw traducirError(error);
   if (!data?.length) throw new Error('No se pudo cancelar esta cita.');
+}
+
+// ---- Consultor ----------------------------------------------------------------
+
+export type Consultor = { email: string };
+
+/** El consultor con sesión iniciada en este teléfono, o null. */
+export async function obtenerConsultor(): Promise<Consultor | null> {
+  if (!supabaseConfigurado) return null;
+  const { data } = await supabase.auth.getSession();
+  const user = data.session?.user;
+  if (!user || user.is_anonymous) return null;
+  const { data: es, error } = await supabase.rpc('es_consultor');
+  if (error) throw traducirError(error);
+  return es ? { email: user.email ?? '' } : null;
+}
+
+export async function entrarConsultor(email: string, clave: string): Promise<Consultor> {
+  comprobarConfig();
+  const { error } = await supabase.auth.signInWithPassword({ email, password: clave });
+  if (error) {
+    if (/invalid login credentials/i.test(error.message)) {
+      throw new ReglaError('Email o contraseña incorrectos.');
+    }
+    throw traducirError(error);
+  }
+  const consultor = await obtenerConsultor();
+  if (!consultor) {
+    await supabase.auth.signOut();
+    throw new ReglaError('Esta cuenta no tiene permiso de consultor.');
+  }
+  return consultor;
+}
+
+export async function salirConsultor() {
+  await supabase.auth.signOut();
+}
+
+/** Todas las citas (la base de datos solo se las da al consultor). */
+export async function obtenerTodasLasCitas(): Promise<Cita[]> {
+  comprobarConfig();
+  const { data, error } = await supabase.from('citas').select(COLUMNAS).order('inicio');
+  if (error) throw traducirError(error);
+  return (data as Fila[]).map(aCita);
 }

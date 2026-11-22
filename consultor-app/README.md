@@ -91,6 +91,22 @@ secreta no coincide entre el paso 3 y el 5; `502` significa que Resend rechazó 
 (revisa la clave de Resend y que `AVISO_EMAIL` sea el email de tu cuenta de Resend).
 Para corregir la URL o la clave del SQL: **Project Settings → Vault** (`aviso_url`, `aviso_secreto`).
 
+### Panel del consultor dentro de la app
+
+Al pie de la pantalla «Agendar» hay un enlace discreto, **Acceso consultor**. Ahí entras con
+tu email y contraseña y ves todas las citas agrupadas por día, con botones para llamar, escribir
+por WhatsApp o email, y cancelar.
+
+1. **Authentication → Users → Add user → Create new user**: tu email y una contraseña,
+   marcando **Auto Confirm User**.
+2. **SQL Editor**: abre `supabase/migrations/20261122030000_consultor.sql`, cambia la línea
+   marcada con «CAMBIA» por ese email y pulsa **Run**. Al final debe aparecer tu email.
+3. En la app: **Agendar → Acceso consultor** y entra.
+
+Solo las cuentas de la tabla `consultores` pueden ver el panel. Si cancelas tú una cita, no te
+llega el email de cancelación y el cliente no recibe aviso automático: avísale con los botones
+de la ficha. Para que WhatsApp funcione, el teléfono del cliente debe incluir el código de país.
+
 ### Reglas que aplica la base de datos
 
 - Un horario no puede tener dos citas confirmadas.

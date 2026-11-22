@@ -1,12 +1,13 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { AvisoDesactualizado, Cargando, ErrorCarga } from '@/components/estado';
 import { Icon } from '@/components/icon';
 import { colors } from '@/constants/colors';
 import { CONSULTOR } from '@/constants/consultor';
 import { useOcupados } from '@/hooks/use-citas';
+import { useConsultor } from '@/hooks/use-consultor';
 import { calcularAgenda, formato } from '@/utils/agenda';
 
 import { ConsultorCard } from './consultor-card';
@@ -15,6 +16,7 @@ import { SlotGrid } from './slot-grid';
 
 export function Agendar() {
   const ocupados = useOcupados();
+  const consultor = useConsultor();
   const { refetch } = ocupados;
   const [ahora, setAhora] = useState(() => new Date());
   const [diaElegido, setDiaElegido] = useState<number | null>(null);
@@ -102,6 +104,17 @@ export function Agendar() {
         }}>
         Sesiones de {CONSULTOR.duracionMin} minutos. Las horas se muestran en tu zona horaria.
       </Text>
+
+      <Pressable
+        testID="acceso-consultor"
+        accessibilityRole="button"
+        onPress={() => router.push('/consultor')}
+        style={({ pressed }) => ({ alignSelf: 'center', padding: 8, opacity: pressed ? 0.5 : 1 })}>
+        <Text
+          style={{ color: colors.secondaryLabel, fontSize: 13, textDecorationLine: 'underline' }}>
+          {consultor.data ? 'Panel del consultor' : 'Acceso consultor'}
+        </Text>
+      </Pressable>
     </ScrollView>
   );
 }

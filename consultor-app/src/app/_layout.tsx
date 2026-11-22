@@ -31,6 +31,7 @@ export default function RootLayout() {
             options={{ presentation: 'modal', title: 'Confirmar cita' }}
           />
           <Stack.Screen name="cita/[id]" options={{ presentation: 'modal', title: 'Tu cita' }} />
+          <Stack.Screen name="consultor" options={{ presentation: 'modal', headerShown: false }} />
         </Stack>
       </ThemeProvider>
     </QueryClientProvider>
