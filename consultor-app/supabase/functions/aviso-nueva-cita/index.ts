@@ -2,7 +2,7 @@
 // de cada cambio y envía:
 //   • a ti, un aviso cuando alguien agenda o cancela;
 //   • al cliente, la confirmación de su cita (con un archivo para su calendario)
-//     y otro email si la cancela.
+//     y otro email si la cancela él o la cancelas tú.
 //
 // Secrets (Supabase → Edge Functions → Secrets):
 //   RESEND_API_KEY    clave de https://resend.com
@@ -30,6 +30,7 @@ type Cita = {
 type Entorno = (nombre: string) => string | undefined;
 
 export type TipoAviso = 'nueva' | 'cancelada';
+export type CanceladaPor = 'cliente' | 'consultor';
 
 type Email = {
   from: string;
@@ -156,8 +157,13 @@ ${tabla(filas)}
   return { asunto, texto, html };
 }
 
-/** Email para el cliente cuando él mismo cancela su cita. */
-export function armarEmailCancelacionCliente(cita: Cita, zona: string, consultor: string) {
+/** Email para el cliente cuando se cancela su cita (la cancele él o el consultor). */
+export function armarEmailCancelacionCliente(
+  cita: Cita,
+  zona: string,
+  consultor: string,
+  por: CanceladaPor = 'cliente',
+) {
   const { fecha, hora, inicio, rango, nombreZona } = fechas(cita, zona);
   const nombre = cita.nombre.trim().split(/\s+/)[0] || cita.nombre;
   const filas: [string, string][] = [
@@ -167,15 +173,21 @@ export function armarEmailCancelacionCliente(cita: Cita, zona: string, consultor
     ['Tema', cita.tema],
   ];
   const calendario = 'Si la habías añadido a tu calendario, puedes borrarla.';
-  const pie =
-    'Cuando quieras, puedes agendar otra cita desde la app. ' +
-    'Si cancelaste por error o tienes alguna duda, responde a este email.';
+  const delConsultor = por === 'consultor';
+  const pie = delConsultor
+    ? 'Sentimos las molestias. Puedes agendar otro horario desde la app cuando quieras. ' +
+      'Si tienes alguna duda, responde a este email.'
+    : 'Cuando quieras, puedes agendar otra cita desde la app. ' +
+      'Si cancelaste por error o tienes alguna duda, responde a este email.';
+  const aviso = delConsultor
+    ? `${consultor} tuvo que cancelar tu cita.`
+    : `Tu cita con ${consultor} quedó cancelada.`;
 
-  const asunto = `Cita cancelada: ${fecha} a las ${hora(inicio)}`;
+  const asunto = `${delConsultor ? 'Tu cita fue cancelada' : 'Cita cancelada'}: ${fecha} a las ${hora(inicio)}`;
   const texto = [
     `Hola ${nombre}:`,
     '',
-    `Tu cita con ${consultor} quedó cancelada.`,
+    aviso,
     '',
     ...filas.map(([k, v]) => `${k}: ${v}`),
     '',
@@ -184,8 +196,10 @@ export function armarEmailCancelacionCliente(cita: Cita, zona: string, consultor
     pie,
   ].join('\n');
   const html = envoltorio(`
-<h2 style="margin:0 0 8px;color:#c62828">Tu cita quedó cancelada</h2>
-<p style="margin:0 0 16px">Hola ${escapar(nombre)}, cancelaste tu cita con ${escapar(consultor)}.</p>
+<h2 style="margin:0 0 8px;color:#c62828">${delConsultor ? 'Tu cita fue cancelada' : 'Tu cita quedó cancelada'}</h2>
+<p style="margin:0 0 16px">Hola ${escapar(nombre)}, ${escapar(
+    delConsultor ? `${consultor} tuvo que cancelar tu cita.` : `cancelaste tu cita con ${consultor}.`,
+  )}</p>
 ${tabla(filas)}
 <p style="margin:20px 0 4px;color:#666">${escapar(calendario)}</p>
 <p style="margin:0;color:#666">${escapar(pie)}</p>`);
@@ -247,7 +261,12 @@ export async function manejar(req: Request, env: Entorno, enviar = fetch): Promi
     return new Response('No autorizado', { status: 401 });
   }
 
-  let cuerpo: { type?: string; record?: Cita; old_record?: Pick<Cita, 'estado'> };
+  let cuerpo: {
+    type?: string;
+    record?: Cita;
+    old_record?: Pick<Cita, 'estado'>;
+    cancelada_por?: CanceladaPor | null;
+  };
   try {
     cuerpo = await req.json();
   } catch {
@@ -278,16 +297,23 @@ export async function manejar(req: Request, env: Entorno, enviar = fetch): Promi
   const remitente = env('AVISO_REMITENTE') || REMITENTE_PRUEBA;
   const consultor = env('CONSULTOR_NOMBRE') || 'Tu Consultor Financiero';
 
+  // Si la cancelaste tú, no hace falta avisarte; solo se escribe al cliente.
+  const por: CanceladaPor = cuerpo.cancelada_por === 'consultor' ? 'consultor' : 'cliente';
+  const avisarte = !(tipo === 'cancelada' && por === 'consultor');
+
   // 1. Aviso para ti.
-  const aviso = armarEmail(cita, zona, tipo);
-  const avisoOk = await enviarEmail(enviar, apiKey, {
-    from: remitente,
-    to: [destino],
-    ...(cita.email ? { reply_to: cita.email } : {}),
-    subject: aviso.asunto,
-    text: aviso.texto,
-    html: aviso.html,
-  });
+  let avisoOk = true;
+  if (avisarte) {
+    const aviso = armarEmail(cita, zona, tipo);
+    avisoOk = await enviarEmail(enviar, apiKey, {
+      from: remitente,
+      to: [destino],
+      ...(cita.email ? { reply_to: cita.email } : {}),
+      subject: aviso.asunto,
+      text: aviso.texto,
+      html: aviso.html,
+    });
+  }
 
   // 2. Email para el cliente: confirmación al reservar, aviso al cancelar.
   let cliente = 'sin email del cliente';
@@ -312,7 +338,7 @@ export async function manejar(req: Request, env: Entorno, enviar = fetch): Promi
       });
       cliente = ok ? 'confirmación enviada' : 'error al enviar la confirmación';
     } else {
-      const c = armarEmailCancelacionCliente(cita, zona, consultor);
+      const c = armarEmailCancelacionCliente(cita, zona, consultor, por);
       const ok = await enviarEmail(enviar, apiKey, {
         from: remitente,
         to: [cita.email],
@@ -326,7 +352,8 @@ export async function manejar(req: Request, env: Entorno, enviar = fetch): Promi
   }
 
   if (!avisoOk) return new Response(`No se pudo enviar tu aviso; cliente: ${cliente}`, { status: 502 });
-  return new Response(`Aviso enviado; cliente: ${cliente}`, { status: 200 });
+  const tuyo = avisarte ? 'Aviso enviado' : 'Cancelada por el consultor (sin aviso para ti)';
+  return new Response(`${tuyo}; cliente: ${cliente}`, { status: 200 });
 }
 
 // En Supabase (Deno) arranca el servidor; en las pruebas locales se importa `manejar`.

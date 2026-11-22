@@ -4,7 +4,7 @@ import type { SymbolViewProps } from 'expo-symbols';
 import { Cargando, ErrorCarga } from '@/components/estado';
 import { Icon } from '@/components/icon';
 import { colors } from '@/constants/colors';
-import { MODALIDADES } from '@/constants/consultor';
+import { CONSULTOR, MODALIDADES } from '@/constants/consultor';
 import { useCancelarComoConsultor, useTodasLasCitas } from '@/hooks/use-consultor';
 import { formato } from '@/utils/agenda';
 import { prefijoDelTelefono } from '@/utils/codigo-pais';
@@ -53,7 +53,11 @@ export function CitaConsultor({ id }: { id: string }) {
   function pedirCancelacion() {
     Alert.alert(
       '¿Cancelar esta cita?',
-      `El horario quedará libre. ${cita!.nombre} no recibe aviso automático: avísale tú.`,
+      !cita!.email
+        ? `El horario quedará libre. ${cita!.nombre} no dejó email, así que no recibirá aviso automático: avísale tú.`
+        : CONSULTOR.confirmacionPorEmail
+          ? `El horario quedará libre. Le enviaremos un email a ${cita!.nombre} (${cita!.email}) avisándole.`
+          : `El horario quedará libre. ${cita!.nombre} no recibirá aviso automático: avísale tú.`,
       [
         { text: 'No', style: 'cancel' },
         {

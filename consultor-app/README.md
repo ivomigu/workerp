@@ -113,8 +113,8 @@ por WhatsApp o email, y cancelar.
 3. En la app: **Agendar → Acceso consultor** y entra.
 
 Solo las cuentas de la tabla `consultores` pueden ver el panel. Si cancelas tú una cita, no te
-llega el email de cancelación y el cliente no recibe aviso automático: avísale con los botones
-de la ficha.
+llega el email de cancelación; el cliente recibe un email si dejó el suyo (ver «Email de
+confirmación para el cliente»). Si no dejó email, avísale con los botones de la ficha.
 
 ### Teléfonos con código de país
 
@@ -129,8 +129,10 @@ teléfono del cliente no indica su país, se usa `codigoPais` de `src/constants/
 Cuando un cliente deja su email, recibe un email «Cita confirmada» con fecha, hora, modalidad y
 tema, y un archivo `cita.ics` para añadir la cita a su calendario (con recordatorio 1 hora antes).
 Si responde a ese email, la respuesta te llega a ti.
-Si el cliente cancela desde la app, también recibe un email «Cita cancelada». (Si cancelas tú desde
-el panel, no se envía nada: avísale con los botones de la ficha.)
+Si el cliente cancela desde la app, también recibe un email «Cita cancelada». Si cancelas tú (desde
+el panel de la app o desde Supabase), el cliente recibe «Tu cita fue cancelada» y a ti no te llega
+aviso, porque ya lo sabes. Para esto último, ejecuta también en **SQL Editor**
+`supabase/migrations/20261122050000_aviso_cancelacion_consultor.sql` (no hay nada que cambiar).
 
 Para escribir a los clientes, Resend exige un **dominio propio verificado** (por ejemplo
 `tuconsultoria.mx`). Sin él, solo te llegan tus avisos.
