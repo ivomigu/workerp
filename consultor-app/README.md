@@ -61,15 +61,18 @@ vista `agenda_consultor`.
 
 ## Conectar con Supabase (para que veas todas las citas)
 
+Todo el SQL que necesitas está en `supabase/pasos/`, en tres archivos que se ejecutan en orden:
+`1-base.sql` (la agenda), `2-consultor.sql` (tu acceso al panel) y `3-emails.sql` (los emails).
+La carpeta `supabase/migrations/` es el historial de cambios; si ya ejecutaste esos archivos,
+no hace falta repetir nada.
+
 Las citas se guardan en Supabase. Cada teléfono entra como usuario anónimo (el
 cliente no se registra) y solo puede ver y cancelar sus propias citas. Tú las ves
 todas desde el panel de Supabase.
 
 1. Crea un proyecto gratis en https://supabase.com.
-2. **SQL Editor → New query**: pega todo el archivo
-   `supabase/migrations/20261122000000_citas.sql` y pulsa **Run**.
-   Después ejecuta también `supabase/migrations/20261122040000_zona_mexico.sql`, que pone la
-   agenda en hora del centro de México.
+2. **SQL Editor → New query**: pega todo el archivo `supabase/pasos/1-base.sql` y pulsa
+   **Run** (no hay nada que cambiar).
 3. **Authentication → Sign In / Providers**: activa **Allow anonymous sign-ins**.
 4. **Project Settings → API** (o *Data API* / *API Keys*): copia la **Project URL**
    y la clave **publishable** (en proyectos antiguos se llama **anon public**).
@@ -100,11 +103,10 @@ Usa [Resend](https://resend.com) (gratis hasta 3.000 emails al mes) y una Edge F
    `aviso-nueva-cita`, pega el contenido de `supabase/functions/aviso-nueva-cita/index.ts` y
    pulsa **Deploy**. Después, en los ajustes de la función, **desactiva «Verify JWT»**
    (la función se protege con tu clave secreta).
-5. **SQL Editor**: abre `supabase/migrations/20261122010000_aviso_email.sql`, cambia las dos
-   líneas marcadas con «CAMBIA» (tu Project URL y la clave secreta del paso 2) y pulsa **Run**.
-6. En **SQL Editor**, ejecuta también `supabase/migrations/20261122020000_aviso_cancelacion.sql`
-   (no hay que cambiar nada) para recibir otro email cuando un cliente cancela.
-7. Agenda una cita de prueba desde la app y luego cancélala. Te llegan dos emails en unos segundos.
+5. **SQL Editor**: abre `supabase/pasos/3-emails.sql`, cambia las dos líneas marcadas con
+   «CAMBIA» (tu Project URL y la clave secreta del paso 2) y pulsa **Run**. Si te equivocas,
+   corrígelo y vuelve a ejecutarlo.
+6. Agenda una cita de prueba desde la app y luego cancélala. Te llegan dos emails en unos segundos.
 
 Si no llega: mira **Edge Functions → aviso-nueva-cita → Logs**. `401` significa que la clave
 secreta no coincide entre el paso 3 y el 5; `502` significa que Resend rechazó el envío
@@ -119,8 +121,8 @@ por WhatsApp o email, y cancelar.
 
 1. **Authentication → Users → Add user → Create new user**: tu email y una contraseña,
    marcando **Auto Confirm User**.
-2. **SQL Editor**: abre `supabase/migrations/20261122030000_consultor.sql`, cambia la línea
-   marcada con «CAMBIA» por ese email y pulsa **Run**. Al final debe aparecer tu email.
+2. **SQL Editor**: abre `supabase/pasos/2-consultor.sql`, cambia la línea marcada con «CAMBIA»
+   por ese email y pulsa **Run**. Al final debe aparecer tu email.
 3. En la app: **Agendar → Acceso consultor** y entra.
 
 Solo las cuentas de la tabla `consultores` pueden ver el panel. Si cancelas tú una cita, no te
@@ -142,8 +144,7 @@ tema, y un archivo `cita.ics` para añadir la cita a su calendario (con recordat
 Si responde a ese email, la respuesta te llega a ti.
 Si el cliente cancela desde la app, también recibe un email «Cita cancelada». Si cancelas tú (desde
 el panel de la app o desde Supabase), el cliente recibe «Tu cita fue cancelada» y a ti no te llega
-aviso, porque ya lo sabes. Para esto último, ejecuta también en **SQL Editor**
-`supabase/migrations/20261122050000_aviso_cancelacion_consultor.sql` (no hay nada que cambiar).
+aviso, porque ya lo sabes.
 
 Para escribir a los clientes, Resend exige un **dominio propio verificado** (por ejemplo
 `tuconsultoria.mx`). Sin él, solo te llegan tus avisos.
