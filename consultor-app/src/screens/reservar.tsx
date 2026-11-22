@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Alert } from 'react-native';
 
 import { CONSULTOR, MODALIDADES, TEMAS, type Modalidad } from '@/constants/consultor';
+import { emailsAClientes } from '@/lib/supabase';
 import { useCrearCita } from '@/hooks/use-citas';
 import { formato } from '@/utils/agenda';
 import { HorarioOcupadoError, ReglaError } from '@/utils/api';
@@ -139,9 +140,7 @@ export function Reservar({ inicio }: { inicio: Date }) {
             <TextInput
               testID="input-email"
               placeholder={
-                CONSULTOR.confirmacionPorEmail
-                  ? 'Email (para recibir la confirmación)'
-                  : 'Email (opcional)'
+                emailsAClientes ? 'Email (para recibir la confirmación)' : 'Email (opcional)'
               }
               defaultValue={cliente.email}
               onChangeText={setEmail}

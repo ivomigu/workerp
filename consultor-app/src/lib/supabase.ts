@@ -3,6 +3,8 @@ import '@/utils/local-storage';
 import { createClient } from '@supabase/supabase-js';
 import { AppState } from 'react-native';
 
+import { CONSULTOR } from '@/constants/consultor';
+
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const key = process.env.EXPO_PUBLIC_SUPABASE_KEY;
 
@@ -14,6 +16,9 @@ export const supabaseConfigurado = Boolean(url && key);
  * funciona con datos de ejemplo guardados solo en este teléfono.
  */
 export const modoDemo = process.env.EXPO_PUBLIC_DEMO === '1' || !supabaseConfigurado;
+
+/** La app solo menciona emails al cliente si están activados y no es la demostración. */
+export const emailsAClientes = CONSULTOR.confirmacionPorEmail && !modoDemo;
 
 export const supabase = createClient(url || 'http://localhost', key || 'sin-configurar', {
   auth: {
