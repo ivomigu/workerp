@@ -102,7 +102,8 @@ export function Agendar() {
           textAlign: 'center',
           paddingHorizontal: 32,
         }}>
-        Sesiones de {CONSULTOR.duracionMin} minutos. Las horas se muestran en tu zona horaria.
+        Sesiones de {CONSULTOR.duracionMin} minutos. Todas las horas están en {CONSULTOR.nombreZona}
+        .
       </Text>
 
       <Pressable

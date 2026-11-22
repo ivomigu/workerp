@@ -7,15 +7,15 @@ import { Icon } from '@/components/icon';
 import { colors } from '@/constants/colors';
 import { MODALIDADES } from '@/constants/consultor';
 import { useSalirConsultor, useTodasLasCitas } from '@/hooks/use-consultor';
-import { esMismoDia, formato } from '@/utils/agenda';
+import { claveDia, esMismoDia, formato, sumarDias } from '@/utils/agenda';
 import type { Cita } from '@/utils/api';
 
 type Vista = 'proximas' | 'pasadas';
 const DIA = 86_400_000;
 
 function tituloDia(fecha: Date, hoy: Date) {
-  const manana = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1);
-  const ayer = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 1);
+  const manana = sumarDias(hoy, 1);
+  const ayer = sumarDias(hoy, -1);
   const larga = formato.fechaLarga(fecha);
   if (esMismoDia(fecha, hoy)) return `Hoy · ${larga}`;
   if (esMismoDia(fecha, manana)) return `Mañana · ${larga}`;
@@ -29,7 +29,7 @@ function agruparPorDia(citas: Cita[], hoy: Date) {
   let clave = '';
   for (const c of citas) {
     const d = new Date(c.inicio);
-    const k = d.toDateString();
+    const k = claveDia(d);
     if (k !== clave) {
       secciones.push({ title: tituloDia(d, hoy), data: [] });
       clave = k;

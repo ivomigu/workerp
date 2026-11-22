@@ -5,7 +5,7 @@
 //   RESEND_API_KEY   clave de https://resend.com
 //   AVISO_EMAIL      tu email (el mismo con el que creaste la cuenta de Resend)
 //   AVISO_SECRETO    la misma clave secreta que pusiste en el SQL del aviso
-//   ZONA_HORARIA     opcional, por ejemplo Europe/Madrid (por defecto)
+//   ZONA_HORARIA     opcional; por defecto America/Mexico_City (hora del centro de México)
 //   AVISO_REMITENTE  opcional; por defecto "Agenda <onboarding@resend.dev>"
 
 type Cita = {
@@ -31,14 +31,19 @@ const escapar = (t: string) =>
 export function armarEmail(cita: Cita, zona: string, tipo: TipoAviso = 'nueva') {
   const inicio = new Date(cita.inicio);
   const fin = new Date(inicio.getTime() + cita.duracion_min * 60_000);
-  const fecha = inicio.toLocaleDateString('es-ES', {
+  const fecha = inicio.toLocaleDateString('es-MX', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     timeZone: zona,
   });
   const hora = (d: Date) =>
-    d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: zona });
+    d.toLocaleTimeString('es-MX', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: zona,
+    });
   const rango = `${hora(inicio)} – ${hora(fin)}`;
   const modalidad = cita.modalidad === 'presencial' ? 'Presencial' : 'Videollamada';
 
@@ -113,7 +118,7 @@ export async function manejar(req: Request, env: Entorno, enviar = fetch): Promi
     return new Response('Falta configuración', { status: 500 });
   }
 
-  const { asunto, texto, html } = armarEmail(cita, env('ZONA_HORARIA') || 'Europe/Madrid', tipo);
+  const { asunto, texto, html } = armarEmail(cita, env('ZONA_HORARIA') || 'America/Mexico_City', tipo);
   const respuesta = await enviar('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },

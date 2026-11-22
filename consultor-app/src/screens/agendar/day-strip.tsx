@@ -53,7 +53,7 @@ export function DayStrip({ dias, seleccionado, onSelect }: Props) {
                 fontWeight: '700',
                 fontVariant: ['tabular-nums'],
               }}>
-              {dia.fecha.getDate()}
+              {formato.numeroDia(dia.fecha)}
             </Text>
             <Text style={{ color: sub, fontSize: 12 }}>
               {lleno ? 'Lleno' : `${dia.libres.length} libres`}

@@ -124,7 +124,7 @@ function CitaFila({ cita }: { cita: Cita }) {
             fontWeight: '700',
             fontVariant: ['tabular-nums'],
           }}>
-          {inicio.getDate()}
+          {formato.numeroDia(inicio)}
         </Text>
       </View>
 

@@ -16,6 +16,15 @@ export const CONSULTOR = {
    */
   codigoPais: '+52',
   /**
+   * Zona horaria en la que atiendes. Los horarios de abajo están en esta zona,
+   * y la app muestra todas las horas en ella, esté donde esté el cliente.
+   */
+  zonaHoraria: 'America/Mexico_City',
+  /** Cómo se le explica al cliente en qué hora están los horarios. */
+  nombreZona: 'hora del centro de México',
+  /** Idioma y país para escribir fechas y horas. */
+  idioma: 'es-MX',
+  /**
    * Horas de inicio de cada sesión por día de la semana
    * (0 = domingo, 1 = lunes … 6 = sábado). Un día sin entrada no se atiende.
    */

@@ -34,6 +34,14 @@ Mientras la terminal siga abierta, cada cambio que guardes se ve al instante en 
 | No ves el QR en la terminal | Pulsa `?` para ver las opciones; o abre Expo Go y escribe a mano la dirección `exp://...` que muestra la terminal. |
 | El firewall de Windows pregunta por Node.js | Permite el acceso en redes privadas. |
 
+## Zona horaria
+
+Los horarios de atención están en **hora del centro de México** (`America/Mexico_City`), y la app
+muestra todas las horas en esa zona, esté donde esté el cliente (Cancún, Tijuana o el
+extranjero). Si algún día atiendes desde otra zona, cambia `zonaHoraria` y `nombreZona` en
+`src/constants/consultor.ts`, el secret `ZONA_HORARIA` de la Edge Function y la zona de la
+vista `agenda_consultor`.
+
 ## Dónde cambiar cosas
 
 - `src/constants/consultor.ts`: nombre, horario de atención, duración, temas.
@@ -49,7 +57,8 @@ todas desde el panel de Supabase.
 1. Crea un proyecto gratis en https://supabase.com.
 2. **SQL Editor → New query**: pega todo el archivo
    `supabase/migrations/20261122000000_citas.sql` y pulsa **Run**.
-   Si tu zona horaria no es `Europe/Madrid`, cámbiala en ese archivo antes (al final).
+   Después ejecuta también `supabase/migrations/20261122040000_zona_mexico.sql`, que pone la
+   agenda en hora del centro de México.
 3. **Authentication → Sign In / Providers**: activa **Allow anonymous sign-ins**.
 4. **Project Settings → API** (o *Data API* / *API Keys*): copia la **Project URL**
    y la clave **publishable** (en proyectos antiguos se llama **anon public**).
@@ -75,7 +84,7 @@ Usa [Resend](https://resend.com) (gratis hasta 3.000 emails al mes) y una Edge F
    - `RESEND_API_KEY` = la clave de Resend
    - `AVISO_EMAIL` = tu email
    - `AVISO_SECRETO` = la clave secreta del paso 2
-   - `ZONA_HORARIA` = tu zona, por ejemplo `Europe/Madrid` o `America/Mexico_City` (opcional)
+   - `ZONA_HORARIA` = `America/Mexico_City` (opcional; es el valor por defecto)
 4. **Supabase → Edge Functions → Deploy a new function → Via Editor**: llámala
    `aviso-nueva-cita`, pega el contenido de `supabase/functions/aviso-nueva-cita/index.ts` y
    pulsa **Deploy**. Después, en los ajustes de la función, **desactiva «Verify JWT»**
