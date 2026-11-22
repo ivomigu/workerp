@@ -28,7 +28,7 @@ export const CONSULTOR = {
    * Dirección web de tu aviso de privacidad (obligatorio para publicar en las
    * tiendas). Ver legal/aviso-de-privacidad.html y el README.
    */
-  urlPrivacidad: '',
+  urlPrivacidad: 'https://ivomigu.github.io/workerp/citas-financieras/aviso-de-privacidad.html',
   /**
    * Ponlo en true cuando tengas un dominio verificado en Resend y el secret
    * AVISO_REMITENTE configurado: la app avisará al cliente de que recibirá
