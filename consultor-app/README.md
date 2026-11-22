@@ -113,7 +113,7 @@ Si el cliente escribe su teléfono sin código de país, la app lo añade sola u
 configurado en su teléfono (México → +52, España → +34…), y lo guarda en formato internacional
 (+525512345678). Así los botones de llamar y WhatsApp funcionan desde cualquier país. Si el
 teléfono del cliente no indica su país, se usa `codigoPais` de `src/constants/consultor.ts`
-(por defecto +34): cámbialo por el de tu país.
+(por defecto +52, México): cámbialo si atiendes desde otro país.
 
 ### Reglas que aplica la base de datos
 

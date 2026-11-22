@@ -14,7 +14,7 @@ export const CONSULTOR = {
    * Prefijo que se añade a los teléfonos escritos sin código de país cuando el
    * teléfono del cliente no indica en qué país está. Cámbialo por el tuyo.
    */
-  codigoPais: '+34',
+  codigoPais: '+52',
   /**
    * Horas de inicio de cada sesión por día de la semana
    * (0 = domingo, 1 = lunes … 6 = sábado). Un día sin entrada no se atiende.
